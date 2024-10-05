@@ -49,7 +49,7 @@ func (s *volumeTestSuite) TestDiscoverNewDiscs() {
 	})
 }
 
-func TestWorkflowTestSuite(t *testing.T) {
+func TestVolume(t *testing.T) {
 	t.Parallel()
 	suite.Run(t, new(volumeTestSuite))
 }

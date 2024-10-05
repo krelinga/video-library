@@ -4,11 +4,8 @@ import (
 	"context"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/krelinga/video-library/internal/vllib"
-	"github.com/krelinga/video-library/internal/vlqueues"
-	"go.temporal.io/sdk/workflow"
 )
 
 func VolumeMkDir(ctx context.Context, volumeID string) error {
@@ -16,10 +13,7 @@ func VolumeMkDir(ctx context.Context, volumeID string) error {
 	return os.MkdirAll(dir, 0755)
 }
 
-var VolumeMkDirOptions = workflow.ActivityOptions{
-	StartToCloseTimeout: 5 * time.Second,
-	TaskQueue:           vlqueues.Light,
-}
+var VolumeMkDirOptions = lightOptions
 
 func VolumeReadDiscNames(ctx context.Context, volumeID string) ([]string, error) {
 	dir := vllib.VolumePath(ctx, volumeID)
@@ -40,7 +34,4 @@ func VolumeReadDiscNames(ctx context.Context, volumeID string) ([]string, error)
 	return out, nil
 }
 
-var VolumeReadDiscNamesOptions = workflow.ActivityOptions{
-	StartToCloseTimeout: 5 * time.Second,
-	TaskQueue:           vlqueues.Light,
-}
+var VolumeReadDiscNamesOptions = lightOptions

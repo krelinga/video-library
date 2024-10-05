@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.temporal.io/sdk/client"
 )
 
@@ -12,7 +13,8 @@ func TestGetTemporalClient(t *testing.T) {
 	t.Parallel()
 
 	// Create a mock Temporal client
-	mockClient := new(client.Client)
+	mockClient, err := client.NewLazyClient(client.Options{})
+	require.NoError(t, err)
 
 	// Create a context with the Temporal client
 	ctx := WithTemporalClient(context.Background(), mockClient)
