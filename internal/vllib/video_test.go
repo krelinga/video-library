@@ -18,54 +18,63 @@ func TestVideoPath(t *testing.T) {
 		},
 	})
 
-	t.Run("FromDisc with valid DiscID and Filename", func(t *testing.T) {
-		videoLineage := &vltypes.VideoLineage{
-			FromDisc: &vltypes.VideoFromDisc{
-				DiscID:   "volumeID/discID",
-				Filename: "video.mp4",
+	tests := []struct {
+		name          string
+		videoLineage  *vltypes.VideoLineage
+		expectedPath  string
+		expectedError error
+	}{
+		{
+			name: "FromDisc with valid DiscID and Filename",
+			videoLineage: &vltypes.VideoLineage{
+				FromDisc: &vltypes.VideoFromDisc{
+					DiscID:   "volumeID/discID",
+					Filename: "video.mp4",
+				},
 			},
-		}
-
-		expectedPath := "/mocked/path/volumeID/discID/video.mp4"
-
-		path, err := VideoPath(ctx, videoLineage)
-		assert.NoError(t, err)
-		assert.Equal(t, expectedPath, path)
-	})
-
-	t.Run("FromDisc with missing Filename", func(t *testing.T) {
-		videoLineage := &vltypes.VideoLineage{
-			FromDisc: &vltypes.VideoFromDisc{
-				DiscID: "volumeID/discID",
+			expectedPath:  "/mocked/path/volumeID/discID/video.mp4",
+			expectedError: nil,
+		},
+		{
+			name: "FromDisc with missing Filename",
+			videoLineage: &vltypes.VideoLineage{
+				FromDisc: &vltypes.VideoFromDisc{
+					DiscID: "volumeID/discID",
+				},
 			},
-		}
-
-		path, err := VideoPath(ctx, videoLineage)
-		assert.Empty(t, path)
-		assert.Error(t, err)
-		assert.True(t, errors.Is(err, ErrCorruptVideoLineage))
-	})
-
-	t.Run("FromDisc with invalid DiscID", func(t *testing.T) {
-		videoLineage := &vltypes.VideoLineage{
-			FromDisc: &vltypes.VideoFromDisc{
-				DiscID:   "invalidDiscID",
-				Filename: "video.mp4",
+			expectedPath:  "",
+			expectedError: ErrCorruptVideoLineage,
+		},
+		{
+			name: "FromDisc with invalid DiscID",
+			videoLineage: &vltypes.VideoLineage{
+				FromDisc: &vltypes.VideoFromDisc{
+					DiscID:   "invalidDiscID",
+					Filename: "video.mp4",
+				},
 			},
-		}
+			expectedPath:  "",
+			expectedError: ErrCorruptVideoLineage,
+		},
+		{
+			name: "Unknown lineage",
+			videoLineage: &vltypes.VideoLineage{},
+			expectedPath:  "",
+			expectedError: ErrCorruptVideoLineage,
+		},
+	}
 
-		path, err := VideoPath(ctx, videoLineage)
-		assert.Empty(t, path)
-		assert.Error(t, err)
-		assert.True(t, errors.Is(err, ErrCorruptVideoLineage))
-	})
-
-	t.Run("Unknown lineage", func(t *testing.T) {
-		videoLineage := &vltypes.VideoLineage{}
-
-		path, err := VideoPath(ctx, videoLineage)
-		assert.Empty(t, path)
-		assert.Error(t, err)
-		assert.True(t, errors.Is(err, ErrCorruptVideoLineage))
-	})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			path, err := VideoPath(ctx, tt.videoLineage)
+			if tt.expectedError != nil {
+				assert.Empty(t, path)
+				assert.Error(t, err)
+				assert.True(t, errors.Is(err, tt.expectedError))
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expectedPath, path)
+			}
+		})
+	}
 }
