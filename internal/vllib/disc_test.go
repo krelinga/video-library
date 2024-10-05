@@ -1,8 +1,11 @@
 package vllib
 
 import (
+	"context"
 	"testing"
 
+	"github.com/krelinga/video-library/internal/vlconfig"
+	"github.com/krelinga/video-library/internal/vlcontext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -77,6 +80,41 @@ func TestDiscParseID(t *testing.T) {
 				if tt.discBase != nil {
 					assert.Equal(t, tt.wantDiscBase, *tt.discBase)
 				}
+			}
+		})
+	}
+}
+
+func TestDiscPathWithMockedDiscParseID(t *testing.T) {
+	tests := []struct {
+		name     string
+		discID   string
+		wantPath string
+		wantErr  error
+	}{
+		{
+			name:     "valid discID",
+			discID:   "volume1/disc1",
+			wantPath: "/mocked/path/volume1/disc1",
+			wantErr:  nil,
+		},
+		{
+			name:     "invalid discID",
+			discID:   "volume2disc2",
+			wantPath: "",
+			wantErr:  ErrInvalidDiscID,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := vlcontext.WithConfig(context.Background(), &vlconfig.Root{Volume: &vlconfig.Volume{Directory: "/mocked/path"}})
+			gotPath, err := DiscPath(ctx, tt.discID)
+			if tt.wantErr != nil {
+				assert.ErrorIs(t, err, tt.wantErr)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.wantPath, gotPath)
 			}
 		})
 	}

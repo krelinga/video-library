@@ -1,7 +1,9 @@
 package vllib
 
 import (
+	"context"
 	"errors"
+	"path/filepath"
 	"strings"
 )
 
@@ -19,4 +21,13 @@ func DiscParseID(discID string, volumeID, discBase *string) error {
 		*discBase = parts[1]
 	}
 	return nil
+}
+
+func DiscPath(ctx context.Context, discID string) (string, error) {
+	var volumeID, discBase string
+	err := DiscParseID(discID, &volumeID, &discBase)
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(VolumePath(ctx, volumeID), discBase), nil
 }
