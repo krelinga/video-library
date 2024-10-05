@@ -19,7 +19,7 @@ type VolumeDiscoverNewDiscsUpdateResponse struct {
 const VolumeDiscoverNewDiscsUpdate = "VolumeDiscoverNewDiscsUpdate"
 
 func Volume(ctx workflow.Context, state *VolumeState) error {
-	volumeName := workflow.GetInfo(ctx).WorkflowExecution.ID
+	volumeID := workflow.GetInfo(ctx).WorkflowExecution.ID
 
 	wt := workTracker{}
 	if state == nil {
@@ -28,7 +28,7 @@ func Volume(ctx workflow.Context, state *VolumeState) error {
 		state = &VolumeState{}
 		err := workflow.ExecuteActivity(
 			workflow.WithActivityOptions(ctx, vlactivities.VolumeMkDirOptions),
-			vlactivities.VolumeMkDir, volumeName).Get(ctx, nil)
+			vlactivities.VolumeMkDir, volumeID).Get(ctx, nil)
 		if err != nil {
 			return err
 		}
@@ -40,7 +40,7 @@ func Volume(ctx workflow.Context, state *VolumeState) error {
 		var discDirs []string
 		err = workflow.ExecuteActivity(
 			workflow.WithActivityOptions(ctx, vlactivities.VolumeReadDiscNamesOptions),
-			vlactivities.VolumeReadDiscNames, volumeName).Get(ctx, &discDirs)
+			vlactivities.VolumeReadDiscNames, volumeID).Get(ctx, &discDirs)
 		if err != nil {
 			return
 		}
@@ -49,7 +49,7 @@ func Volume(ctx workflow.Context, state *VolumeState) error {
 			oldDiscs[disc] = struct{}{}
 		}
 		for _, discDir := range discDirs {
-			disc := filepath.Join(volumeName, discDir)
+			disc := filepath.Join(volumeID, discDir)
 			if _, ok := oldDiscs[disc]; ok {
 				continue
 			}

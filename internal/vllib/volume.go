@@ -7,7 +7,7 @@ import (
 	"github.com/krelinga/video-library/internal/vlcontext"
 )
 
-func VolumePath(ctx context.Context, volumeName string) string {
+func VolumePath(ctx context.Context, volumeID string) string {
 	cfg := vlcontext.GetConfig(ctx)
-	return filepath.Join(cfg.Volume.Directory, volumeName)
+	return filepath.Join(cfg.Volume.Directory, volumeID)
 }

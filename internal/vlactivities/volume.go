@@ -11,8 +11,8 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-func VolumeMkDir(ctx context.Context, volumeName string) error {
-	dir := vllib.VolumePath(ctx, volumeName)
+func VolumeMkDir(ctx context.Context, volumeID string) error {
+	dir := vllib.VolumePath(ctx, volumeID)
 	return os.MkdirAll(dir, 0755)
 }
 
@@ -21,8 +21,8 @@ var VolumeMkDirOptions = workflow.ActivityOptions{
 	TaskQueue:           vlqueues.Light,
 }
 
-func VolumeReadDiscNames(ctx context.Context, volumeName string) ([]string, error) {
-	dir := vllib.VolumePath(ctx, volumeName)
+func VolumeReadDiscNames(ctx context.Context, volumeID string) ([]string, error) {
+	dir := vllib.VolumePath(ctx, volumeID)
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, err
