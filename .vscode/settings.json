@@ -4,6 +4,7 @@
         "devcontainers",
         "protocolbuffers",
         "stretchr",
+        "temporalenums",
         "testsuite",
         "vlactivities",
         "vlapi",
