@@ -1,11 +1,10 @@
-package vlvolume
+package vlworkflows
 
 import (
 	"errors"
 	"testing"
 	"time"
 
-	"github.com/krelinga/video-library/internal/vlworkflows/vldisc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -15,36 +14,36 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-type WorkflowTestSuite struct {
+type VolumeTestSuite struct {
 	suite.Suite
 	testsuite.WorkflowTestSuite
 
 	env *testsuite.TestWorkflowEnvironment
 }
 
-func (s *WorkflowTestSuite) SetupTest() {
+func (s *VolumeTestSuite) SetupTest() {
 	s.env = s.NewTestWorkflowEnvironment()
 }
 
-func (s *WorkflowTestSuite) AfterTest(suiteName, testName string) {
+func (s *VolumeTestSuite) AfterTest(suiteName, testName string) {
 	s.env.AssertExpectations(s.T())
 }
 
-func (s *WorkflowTestSuite) TestFreshlyCreated() {
+func (s *VolumeTestSuite) TestFreshlyCreated() {
 	s.env.OnActivity(actConfigBased.MakeVolumeDir, mock.Anything, "test_volume").Return("/nas/media/Volumes/test_volume", nil)
 	s.env.SetStartWorkflowOptions(client.StartWorkflowOptions{
 		ID: "test_volume",
 	})
-	s.env.ExecuteWorkflow(Workflow, nil)
+	s.env.ExecuteWorkflow(Volume, nil)
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	if s.True(workflow.IsContinueAsNewError(err)) {
 		var cont *workflow.ContinueAsNewError
 		errors.As(err, &cont)
 		conv := converter.GetDefaultDataConverter()
-		actualState := &State{}
+		actualState := &VolumeState{}
 		conv.FromPayloads(cont.Input, &actualState)
-		expectedState := &State{
+		expectedState := &VolumeState{
 			Directory: "/nas/media/Volumes/test_volume",
 		}
 		s.Equal(expectedState, actualState)
@@ -67,36 +66,38 @@ func (cb *newDiscsUpdateCBs) Complete(success any, err error) {
 		return
 	}
 	switch s := success.(type) {
-	case *DiscoverNewDiscsResult:
+	case *VolumeDiscoverNewDiscsUpdateResponse:
 		cb.a.ElementsMatch(cb.expected, s.Discovered)
 	default:
 		cb.a.Fail("unexpected type", success)
 	}
 }
 
-func (s *WorkflowTestSuite) TestDiscoverNewDiscs() {
-	s.env.RegisterWorkflow(vldisc.Workflow2)
+func (s *VolumeTestSuite) TestDiscoverNewDiscs() {
+	s.env.RegisterWorkflow(Disc)
 	s.env.OnActivity(actConfigBased.ReadDiscNames, mock.Anything, "/nas/media/Volumes/test_volume").Return([]string{"disc1", "disc2"}, nil)
 	s.env.SetStartWorkflowOptions(client.StartWorkflowOptions{
 		ID: "test_volume",
 	})
-	state := &State{
+	state := &VolumeState{
 		Directory: "/nas/media/Volumes/test_volume",
 		Discs:     []string{"test_volume/disc1"},
 	}
-	s.env.RegisterDelayedCallback(func() {
-		s.env.UpdateWorkflowByID("test_volume", DiscoverNewDiscs, "", &newDiscsUpdateCBs{a: s.Assertions, expected: []string{"test_volume/disc2"}}, nil)
-	}, time.Hour)
-	s.env.ExecuteWorkflow(Workflow, state)
+	s.env.RegisterDelayedCallback(
+		func() {
+			s.env.UpdateWorkflowByID("test_volume", VolumeDiscoverNewDiscsUpdate, "",
+				&newDiscsUpdateCBs{a: s.Assertions, expected: []string{"test_volume/disc2"}}, nil)
+		}, time.Hour)
+	s.env.ExecuteWorkflow(Volume, state)
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	if s.True(workflow.IsContinueAsNewError(err)) {
 		var cont *workflow.ContinueAsNewError
 		errors.As(err, &cont)
 		conv := converter.GetDefaultDataConverter()
-		actualState := &State{}
+		actualState := &VolumeState{}
 		conv.FromPayloads(cont.Input, &actualState)
-		expectedState := &State{
+		expectedState := &VolumeState{
 			Directory: "/nas/media/Volumes/test_volume",
 			Discs:     []string{"test_volume/disc1", "test_volume/disc2"},
 		}
@@ -106,5 +107,5 @@ func (s *WorkflowTestSuite) TestDiscoverNewDiscs() {
 
 func TestWorkflowTestSuite(t *testing.T) {
 	t.Parallel()
-	suite.Run(t, new(WorkflowTestSuite))
+	suite.Run(t, new(VolumeTestSuite))
 }

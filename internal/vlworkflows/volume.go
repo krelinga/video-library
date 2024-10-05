@@ -1,24 +1,25 @@
-package vlvolume
+package vlworkflows
 
 import (
 	"path/filepath"
 	"time"
 
-	"github.com/krelinga/video-library/internal/vlactivities"
-	"github.com/krelinga/video-library/internal/vlworkflows/vldisc"
 	"go.temporal.io/sdk/workflow"
 )
 
-var actConfigBased *vlactivities.ConfigBased = nil
+type VolumeState struct {
+	Directory string   `json:"directory"`
+	Discs     []string `json:"discs"`
+}
 
-type DiscoverNewDiscsResult struct {
+type VolumeDiscoverNewDiscsUpdateResponse struct {
 	// The workflow IDs of any newly-discovered Discs.
 	Discovered []string
 }
 
-const DiscoverNewDiscs = "DiscoverNewDiscs"
+const VolumeDiscoverNewDiscsUpdate = "VolumeDiscoverNewDiscsUpdate"
 
-func Workflow(ctx workflow.Context, state *State) error {
+func Volume(ctx workflow.Context, state *VolumeState) error {
 	volumeName := workflow.GetInfo(ctx).WorkflowExecution.ID
 	// TODO: Setting this globally does not make sense to me.
 	ctx = workflow.WithActivityOptions(ctx, workflow.ActivityOptions{
@@ -29,7 +30,7 @@ func Workflow(ctx workflow.Context, state *State) error {
 	if state == nil {
 		// A nil state indicates that this is a freshly-created Volume,
 		// so we need to initialize it and create the corresponding directory on-disk.
-		state = &State{}
+		state = &VolumeState{}
 		var dir string
 		err := workflow.ExecuteActivity(ctx, actConfigBased.MakeVolumeDir, volumeName).Get(ctx, &dir)
 		if err != nil {
@@ -39,8 +40,8 @@ func Workflow(ctx workflow.Context, state *State) error {
 		didWork = true
 	}
 
-	discoverNewDiscs := func(ctx workflow.Context) (*DiscoverNewDiscsResult, error) {
-		var result DiscoverNewDiscsResult
+	discoverNewDiscs := func(ctx workflow.Context) (*VolumeDiscoverNewDiscsUpdateResponse, error) {
+		var response VolumeDiscoverNewDiscsUpdateResponse
 		var discDirs []string
 		ctx = workflow.WithActivityOptions(ctx, workflow.ActivityOptions{
 			StartToCloseTimeout: 10 * time.Second,
@@ -58,22 +59,22 @@ func Workflow(ctx workflow.Context, state *State) error {
 			if _, ok := oldDiscs[disc]; ok {
 				continue
 			}
-			result.Discovered = append(result.Discovered, disc)
+			response.Discovered = append(response.Discovered, disc)
 			state.Discs = append(state.Discs, disc)
 			ctx := workflow.WithChildOptions(ctx, workflow.ChildWorkflowOptions{
 				WorkflowID: disc,
 			})
-			err := workflow.ExecuteChildWorkflow(ctx, vldisc.Workflow2, nil).Get(ctx, nil)
+			err := workflow.ExecuteChildWorkflow(ctx, Disc, nil).Get(ctx, nil)
 			if err != nil {
 				return nil, err
 			}
 		}
 
 		didWork = true
-		return &result, err
+		return &response, err
 	}
 
-	err := workflow.SetUpdateHandler(ctx, DiscoverNewDiscs, discoverNewDiscs)
+	err := workflow.SetUpdateHandler(ctx, VolumeDiscoverNewDiscsUpdate, discoverNewDiscs)
 	if err != nil {
 		return err
 	}
@@ -85,5 +86,5 @@ func Workflow(ctx workflow.Context, state *State) error {
 		return err
 	}
 
-	return workflow.NewContinueAsNewError(ctx, Workflow, state)
+	return workflow.NewContinueAsNewError(ctx, Volume, state)
 }
