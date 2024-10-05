@@ -1,4 +1,4 @@
-package vlactivites
+package vlactivities
 
 import (
 	"context"
