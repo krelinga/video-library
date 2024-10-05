@@ -4,6 +4,7 @@
         "devcontainers",
         "protocolbuffers",
         "vlapi",
+        "vlconfig",
         "vlproto",
         "vlvolume"
     ]
