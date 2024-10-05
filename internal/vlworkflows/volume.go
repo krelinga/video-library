@@ -21,7 +21,7 @@ const VolumeDiscoverNewDiscsUpdate = "VolumeDiscoverNewDiscsUpdate"
 func Volume(ctx workflow.Context, state *VolumeState) error {
 	volumeName := workflow.GetInfo(ctx).WorkflowExecution.ID
 
-	didWork := false
+	wt := workTracker{}
 	if state == nil {
 		// A nil state indicates that this is a freshly-created Volume,
 		// so we need to initialize it and create the corresponding directory on-disk.
@@ -32,17 +32,17 @@ func Volume(ctx workflow.Context, state *VolumeState) error {
 		if err != nil {
 			return err
 		}
-		didWork = true
+		wt.Work()
 	}
 
-	discoverNewDiscs := func(ctx workflow.Context) (*VolumeDiscoverNewDiscsUpdateResponse, error) {
-		var response VolumeDiscoverNewDiscsUpdateResponse
+	discoverNewDiscs := func(ctx workflow.Context) (response *VolumeDiscoverNewDiscsUpdateResponse, err error) {
+		defer wt.WorkIfNoError(err)
 		var discDirs []string
-		err := workflow.ExecuteActivity(
+		err = workflow.ExecuteActivity(
 			workflow.WithActivityOptions(ctx, vlactivities.VolumeReadDiscNamesOptions),
 			vlactivities.VolumeReadDiscNames, volumeName).Get(ctx, &discDirs)
 		if err != nil {
-			return nil, err
+			return
 		}
 		oldDiscs := map[string]struct{}{}
 		for _, disc := range state.Discs {
@@ -53,18 +53,19 @@ func Volume(ctx workflow.Context, state *VolumeState) error {
 			if _, ok := oldDiscs[disc]; ok {
 				continue
 			}
+			if response == nil {
+				response = &VolumeDiscoverNewDiscsUpdateResponse{}
+			}
 			response.Discovered = append(response.Discovered, disc)
 			state.Discs = append(state.Discs, disc)
-			err := workflow.ExecuteChildWorkflow(
+			err = workflow.ExecuteChildWorkflow(
 				workflow.WithChildOptions(ctx, childOptions(disc)),
 				Disc, nil).Get(ctx, nil)
 			if err != nil {
-				return nil, err
+				return
 			}
 		}
-
-		didWork = true
-		return &response, err
+		return
 	}
 
 	err := workflow.SetUpdateHandler(ctx, VolumeDiscoverNewDiscsUpdate, discoverNewDiscs)
@@ -72,9 +73,7 @@ func Volume(ctx workflow.Context, state *VolumeState) error {
 		return err
 	}
 
-	err = workflow.Await(ctx, func() bool {
-		return didWork
-	})
+	err = workflow.Await(ctx, wt.AwaitFunc())
 	if err != nil {
 		return err
 	}

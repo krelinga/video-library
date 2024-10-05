@@ -38,7 +38,7 @@ func (s *VolumeTestSuite) TestFreshlyCreated() {
 	s.env.ExecuteWorkflow(Volume, nil)
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
-	if s.True(workflow.IsContinueAsNewError(err)) {
+	if s.True(workflow.IsContinueAsNewError(err), err) {
 		var cont *workflow.ContinueAsNewError
 		errors.As(err, &cont)
 		conv := converter.GetDefaultDataConverter()
@@ -89,7 +89,7 @@ func (s *VolumeTestSuite) TestDiscoverNewDiscs() {
 	s.env.ExecuteWorkflow(Volume, state)
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
-	if s.True(workflow.IsContinueAsNewError(err)) {
+	if s.True(workflow.IsContinueAsNewError(err), err) {
 		var cont *workflow.ContinueAsNewError
 		errors.As(err, &cont)
 		conv := converter.GetDefaultDataConverter()
