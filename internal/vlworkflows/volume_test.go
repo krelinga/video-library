@@ -1,7 +1,6 @@
 package vlworkflows
 
 import (
-	"errors"
 	"testing"
 	"time"
 
@@ -10,9 +9,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"go.temporal.io/sdk/client"
-	"go.temporal.io/sdk/converter"
 	"go.temporal.io/sdk/testsuite"
-	"go.temporal.io/sdk/workflow"
 )
 
 type VolumeTestSuite struct {
@@ -38,15 +35,7 @@ func (s *VolumeTestSuite) TestFreshlyCreated() {
 	s.env.ExecuteWorkflow(Volume, nil)
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
-	if s.True(workflow.IsContinueAsNewError(err), err) {
-		var cont *workflow.ContinueAsNewError
-		errors.As(err, &cont)
-		conv := converter.GetDefaultDataConverter()
-		actualState := &VolumeState{}
-		conv.FromPayloads(cont.Input, &actualState)
-		expectedState := &VolumeState{}
-		s.Equal(expectedState, actualState)
-	}
+	assertContinuedWithState(s.Assertions, err, &VolumeState{})
 }
 
 type newDiscsUpdateCBs struct {
@@ -89,17 +78,9 @@ func (s *VolumeTestSuite) TestDiscoverNewDiscs() {
 	s.env.ExecuteWorkflow(Volume, state)
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
-	if s.True(workflow.IsContinueAsNewError(err), err) {
-		var cont *workflow.ContinueAsNewError
-		errors.As(err, &cont)
-		conv := converter.GetDefaultDataConverter()
-		actualState := &VolumeState{}
-		conv.FromPayloads(cont.Input, &actualState)
-		expectedState := &VolumeState{
-			Discs: []string{"test_volume/disc1", "test_volume/disc2"},
-		}
-		s.Equal(expectedState, actualState)
-	}
+	assertContinuedWithState(s.Assertions, err, &VolumeState{
+		Discs: []string{"test_volume/disc1", "test_volume/disc2"},
+	})
 }
 
 func TestWorkflowTestSuite(t *testing.T) {
