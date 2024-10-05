@@ -8,25 +8,13 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"go.temporal.io/sdk/client"
-	"go.temporal.io/sdk/testsuite"
 )
 
-type VolumeTestSuite struct {
-	suite.Suite
-	testsuite.WorkflowTestSuite
-
-	env *testsuite.TestWorkflowEnvironment
+type volumeTestSuite struct {
+	testSuite
 }
 
-func (s *VolumeTestSuite) SetupTest() {
-	s.env = s.NewTestWorkflowEnvironment()
-}
-
-func (s *VolumeTestSuite) AfterTest(suiteName, testName string) {
-	s.env.AssertExpectations(s.T())
-}
-
-func (s *VolumeTestSuite) TestFreshlyCreated() {
+func (s *volumeTestSuite) TestFreshlyCreated() {
 	s.env.OnActivity(vlactivities.VolumeMkDir, mock.Anything, "test_volume").Return(nil)
 	s.env.SetStartWorkflowOptions(client.StartWorkflowOptions{
 		ID: "test_volume",
@@ -37,7 +25,7 @@ func (s *VolumeTestSuite) TestFreshlyCreated() {
 	assertContinuedWithState(s.Assertions, err, &VolumeState{})
 }
 
-func (s *VolumeTestSuite) TestDiscoverNewDiscs() {
+func (s *volumeTestSuite) TestDiscoverNewDiscs() {
 	s.env.RegisterWorkflow(Disc)
 	s.env.OnActivity(vlactivities.VolumeReadDiscNames, mock.Anything, "test_volume").Return([]string{"disc1", "disc2"}, nil)
 	s.env.SetStartWorkflowOptions(client.StartWorkflowOptions{
@@ -63,5 +51,5 @@ func (s *VolumeTestSuite) TestDiscoverNewDiscs() {
 
 func TestWorkflowTestSuite(t *testing.T) {
 	t.Parallel()
-	suite.Run(t, new(VolumeTestSuite))
+	suite.Run(t, new(volumeTestSuite))
 }

@@ -4,7 +4,9 @@ import (
 	"errors"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 	"go.temporal.io/sdk/converter"
+	"go.temporal.io/sdk/testsuite"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -21,8 +23,8 @@ func assertContinuedWithState[StateType any](a *assert.Assertions, err error, ex
 }
 
 type updateCallbacks[outType any] struct {
-	accept func()
-	reject func(error)
+	accept   func()
+	reject   func(error)
 	complete func(*outType, error)
 }
 
@@ -51,4 +53,19 @@ func assertComplete[outType any](a *assert.Assertions, out *outType, err error) 
 			a.ErrorIs(err, actualErr)
 		},
 	}
+}
+
+type testSuite struct {
+	suite.Suite
+	testsuite.WorkflowTestSuite
+
+	env *testsuite.TestWorkflowEnvironment
+}
+
+func (s *testSuite) SetupTest() {
+	s.env = s.NewTestWorkflowEnvironment()
+}
+
+func (s *testSuite) AfterTest(suiteName, testName string) {
+	s.env.AssertExpectations(s.T())
 }
