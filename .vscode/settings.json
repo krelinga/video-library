@@ -8,7 +8,10 @@
         "vlactivities",
         "vlapi",
         "vlconfig",
+        "vlcontext",
+        "vllib",
         "vlproto",
+        "vlqueues",
         "vlvolume",
         "vlworkflows"
     ]
