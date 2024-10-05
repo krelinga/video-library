@@ -3,9 +3,13 @@
         "connectrpc",
         "devcontainers",
         "protocolbuffers",
+        "stretchr",
+        "testsuite",
+        "vlactivities",
         "vlapi",
         "vlconfig",
         "vlproto",
-        "vlvolume"
+        "vlvolume",
+        "vlworkflows"
     ]
 }
