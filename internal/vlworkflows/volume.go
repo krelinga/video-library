@@ -2,14 +2,13 @@ package vlworkflows
 
 import (
 	"path/filepath"
-	"time"
 
+	"github.com/krelinga/video-library/internal/vlactivities"
 	"go.temporal.io/sdk/workflow"
 )
 
 type VolumeState struct {
-	Directory string   `json:"directory"`
-	Discs     []string `json:"discs"`
+	Discs []string `json:"discs"`
 }
 
 type VolumeDiscoverNewDiscsUpdateResponse struct {
@@ -21,32 +20,27 @@ const VolumeDiscoverNewDiscsUpdate = "VolumeDiscoverNewDiscsUpdate"
 
 func Volume(ctx workflow.Context, state *VolumeState) error {
 	volumeName := workflow.GetInfo(ctx).WorkflowExecution.ID
-	// TODO: Setting this globally does not make sense to me.
-	ctx = workflow.WithActivityOptions(ctx, workflow.ActivityOptions{
-		StartToCloseTimeout: 10 * time.Second,
-	})
 
 	didWork := false
 	if state == nil {
 		// A nil state indicates that this is a freshly-created Volume,
 		// so we need to initialize it and create the corresponding directory on-disk.
 		state = &VolumeState{}
-		var dir string
-		err := workflow.ExecuteActivity(ctx, actConfigBased.MakeVolumeDir, volumeName).Get(ctx, &dir)
+		err := workflow.ExecuteActivity(
+			workflow.WithActivityOptions(ctx, vlactivities.VolumeMkDirOptions),
+			vlactivities.VolumeMkDir, volumeName).Get(ctx, nil)
 		if err != nil {
 			return err
 		}
-		state.Directory = dir
 		didWork = true
 	}
 
 	discoverNewDiscs := func(ctx workflow.Context) (*VolumeDiscoverNewDiscsUpdateResponse, error) {
 		var response VolumeDiscoverNewDiscsUpdateResponse
 		var discDirs []string
-		ctx = workflow.WithActivityOptions(ctx, workflow.ActivityOptions{
-			StartToCloseTimeout: 10 * time.Second,
-		})
-		err := workflow.ExecuteActivity(ctx, actConfigBased.ReadDiscNames, state.Directory).Get(ctx, &discDirs)
+		err := workflow.ExecuteActivity(
+			workflow.WithActivityOptions(ctx, vlactivities.VolumeReadDiscNamesOptions),
+			vlactivities.VolumeReadDiscNames, volumeName).Get(ctx, &discDirs)
 		if err != nil {
 			return nil, err
 		}

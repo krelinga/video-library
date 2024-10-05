@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/krelinga/video-library/internal/vlactivities"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -30,7 +31,7 @@ func (s *VolumeTestSuite) AfterTest(suiteName, testName string) {
 }
 
 func (s *VolumeTestSuite) TestFreshlyCreated() {
-	s.env.OnActivity(actConfigBased.MakeVolumeDir, mock.Anything, "test_volume").Return("/nas/media/Volumes/test_volume", nil)
+	s.env.OnActivity(vlactivities.VolumeMkDir, mock.Anything, "test_volume").Return(nil)
 	s.env.SetStartWorkflowOptions(client.StartWorkflowOptions{
 		ID: "test_volume",
 	})
@@ -43,9 +44,7 @@ func (s *VolumeTestSuite) TestFreshlyCreated() {
 		conv := converter.GetDefaultDataConverter()
 		actualState := &VolumeState{}
 		conv.FromPayloads(cont.Input, &actualState)
-		expectedState := &VolumeState{
-			Directory: "/nas/media/Volumes/test_volume",
-		}
+		expectedState := &VolumeState{}
 		s.Equal(expectedState, actualState)
 	}
 }
@@ -75,13 +74,12 @@ func (cb *newDiscsUpdateCBs) Complete(success any, err error) {
 
 func (s *VolumeTestSuite) TestDiscoverNewDiscs() {
 	s.env.RegisterWorkflow(Disc)
-	s.env.OnActivity(actConfigBased.ReadDiscNames, mock.Anything, "/nas/media/Volumes/test_volume").Return([]string{"disc1", "disc2"}, nil)
+	s.env.OnActivity(vlactivities.VolumeReadDiscNames, mock.Anything, "test_volume").Return([]string{"disc1", "disc2"}, nil)
 	s.env.SetStartWorkflowOptions(client.StartWorkflowOptions{
 		ID: "test_volume",
 	})
 	state := &VolumeState{
-		Directory: "/nas/media/Volumes/test_volume",
-		Discs:     []string{"test_volume/disc1"},
+		Discs: []string{"test_volume/disc1"},
 	}
 	s.env.RegisterDelayedCallback(
 		func() {
@@ -98,8 +96,7 @@ func (s *VolumeTestSuite) TestDiscoverNewDiscs() {
 		actualState := &VolumeState{}
 		conv.FromPayloads(cont.Input, &actualState)
 		expectedState := &VolumeState{
-			Directory: "/nas/media/Volumes/test_volume",
-			Discs:     []string{"test_volume/disc1", "test_volume/disc2"},
+			Discs: []string{"test_volume/disc1", "test_volume/disc2"},
 		}
 		s.Equal(expectedState, actualState)
 	}
