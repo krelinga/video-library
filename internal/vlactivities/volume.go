@@ -7,13 +7,12 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/krelinga/video-library/internal/vlcontext"
-	"github.com/krelinga/video-library/internal/vllib"
 	"github.com/krelinga/video-library/internal/vltemp"
 	"go.temporal.io/sdk/client"
 )
 
 func VolumeMkDir(ctx context.Context, volumeID string) error {
-	dir, err := vllib.VolumePath(ctx, volumeID)
+	dir, err := vltemp.VolumePath(ctx, volumeID)
 	if err != nil {
 		return err
 	}
@@ -23,7 +22,7 @@ func VolumeMkDir(ctx context.Context, volumeID string) error {
 var VolumeMkDirOptions = lightOptions
 
 func VolumeReadDiscNames(ctx context.Context, volumeID string) ([]string, error) {
-	dir, err := vllib.VolumePath(ctx, volumeID)
+	dir, err := vltemp.VolumePath(ctx, volumeID)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +47,7 @@ var VolumeReadDiscNamesOptions = lightOptions
 
 func VolumeBootstrapDisc(ctx context.Context, volumeID, discBase string) (string, error) {
 	temporalClient := vlcontext.GetTemporalClient(ctx)
-	discID, err := vllib.DiscID(volumeID, discBase)
+	discID, err := vltemp.DiscID(volumeID, discBase)
 	if err != nil {
 		return "", err
 	}

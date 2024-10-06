@@ -7,13 +7,12 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/krelinga/video-library/internal/vlcontext"
-	"github.com/krelinga/video-library/internal/vllib"
 	"github.com/krelinga/video-library/internal/vltemp"
 	"go.temporal.io/sdk/client"
 )
 
 func DiscReadVideoNames(ctx context.Context, discID string) ([]string, error) {
-	dir, err := vllib.DiscPath(ctx, discID)
+	dir, err := vltemp.DiscPath(ctx, discID)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +40,7 @@ func DiscBootstrapVideo(ctx context.Context, discID, videoFilename string) (stri
 			Filename: videoFilename,
 		},
 	}
-	videoID, err := vllib.VideoID(lineage)
+	videoID, err := vltemp.VideoID(lineage)
 	if err != nil {
 		return "", err
 	}
