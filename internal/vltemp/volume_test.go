@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"go.temporal.io/sdk/client"
@@ -51,4 +52,38 @@ func (s *volumeTestSuite) TestDiscoverNewDiscs() {
 func TestVolume(t *testing.T) {
 	t.Parallel()
 	suite.Run(t, new(volumeTestSuite))
+}
+func TestNewVolumeWFID(t *testing.T) {
+	tests := []struct {
+		name       string
+		volumeName string
+		expectedID VolumeWFID
+		expectErr  bool
+	}{
+		{
+			name:       "valid volume name",
+			volumeName: "test_volume",
+			expectedID: VolumeWFID("test_volume"),
+			expectErr:  false,
+		},
+		{
+			name:       "empty volume name",
+			volumeName: "",
+			expectedID: "",
+			expectErr:  true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			id, err := NewVolumeWFID(tt.volumeName)
+			if tt.expectErr {
+				assert.Error(t, err)
+				assert.Equal(t, ErrInvalidVolumeID, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expectedID, id)
+			}
+		})
+	}
 }

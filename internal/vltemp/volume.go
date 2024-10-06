@@ -170,3 +170,12 @@ func VolumeWF(ctx workflow.Context, state *VolumeWFState) error {
 
 	return workflow.NewContinueAsNewError(ctx, VolumeWF, state)
 }
+
+type VolumeWFID string
+
+func NewVolumeWFID(volumeName string) (VolumeWFID, error) {
+	if volumeName == "" {
+		return "", ErrInvalidVolumeID
+	}
+	return VolumeWFID(volumeName), nil
+}
