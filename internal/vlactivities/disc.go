@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/krelinga/video-library/internal/vlcontext"
 	"github.com/krelinga/video-library/internal/vllib"
-	"github.com/krelinga/video-library/internal/vlqueues"
+	"github.com/krelinga/video-library/internal/vlconst"
 	"github.com/krelinga/video-library/internal/vltypes"
 	"go.temporal.io/sdk/client"
 )
@@ -53,13 +53,13 @@ func DiscBootstrapVideo(ctx context.Context, discID, videoFilename string) (stri
 	opts := client.StartWorkflowOptions{
 		ID: videoID,
 	}
-	wf, err := temporalClient.ExecuteWorkflow(ctx, opts, vlqueues.Disc, nil)
+	wf, err := temporalClient.ExecuteWorkflow(ctx, opts, vlconst.Disc, nil)
 	if err != nil {
 		return "", err
 	}
 	updateHandle, err := temporalClient.UpdateWorkflow(ctx, client.UpdateWorkflowOptions{
 		UpdateID:            uuid.New().String(),
-		UpdateName:          vlqueues.VideoUpdateBootstrap,
+		UpdateName:          vlconst.VideoUpdateBootstrap,
 		WorkflowID:          videoID,
 		WaitForStage:        client.WorkflowUpdateStageCompleted,
 		FirstExecutionRunID: wf.GetRunID(),

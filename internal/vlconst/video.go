@@ -1,4 +1,4 @@
-package vlqueues
+package vlconst
 
 const (
 	Video                        = "video"
