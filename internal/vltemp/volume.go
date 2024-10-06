@@ -83,7 +83,7 @@ func VolumeBootstrapDisc(ctx context.Context, volumeID, discBase string) (string
 	opts := client.StartWorkflowOptions{
 		ID: discID,
 	}
-	wf, err := temporalClient.ExecuteWorkflow(ctx, opts, Disc, nil)
+	wf, err := temporalClient.ExecuteWorkflow(ctx, opts, DiscWF, nil)
 	if err != nil {
 		return "", err
 	}

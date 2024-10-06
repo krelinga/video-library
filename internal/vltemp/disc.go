@@ -14,7 +14,6 @@ import (
 )
 
 const (
-	Disc                = "disc"
 	DiscUpdateBootstrap = "disc-update-bootstrap"
 )
 
@@ -102,7 +101,7 @@ func DiscBootstrapVideo(ctx context.Context, discID, videoFilename string) (stri
 	opts := client.StartWorkflowOptions{
 		ID: videoID,
 	}
-	wf, err := temporalClient.ExecuteWorkflow(ctx, opts, Disc, nil)
+	wf, err := temporalClient.ExecuteWorkflow(ctx, opts, DiscWF, nil)
 	if err != nil {
 		return "", err
 	}
