@@ -4,28 +4,20 @@ import (
 	"path/filepath"
 
 	"github.com/krelinga/video-library/internal/vlactivities"
+	"github.com/krelinga/video-library/internal/vltypes"
 	"go.temporal.io/sdk/workflow"
 )
 
-type VolumeState struct {
-	Discs []string `json:"discs"`
-}
-
-type VolumeDiscoverNewDiscsUpdateResponse struct {
-	// The workflow IDs of any newly-discovered Discs.
-	Discovered []string
-}
-
 const VolumeDiscoverNewDiscsUpdate = "VolumeDiscoverNewDiscsUpdate"
 
-func Volume(ctx workflow.Context, state *VolumeState) error {
+func Volume(ctx workflow.Context, state *vltypes.VolumeState) error {
 	volumeID := workflow.GetInfo(ctx).WorkflowExecution.ID
 
 	wt := workTracker{}
 	if state == nil {
 		// A nil state indicates that this is a freshly-created Volume,
 		// so we need to initialize it and create the corresponding directory on-disk.
-		state = &VolumeState{}
+		state = &vltypes.VolumeState{}
 		err := workflow.ExecuteActivity(
 			workflow.WithActivityOptions(ctx, vlactivities.VolumeMkDirOptions),
 			vlactivities.VolumeMkDir, volumeID).Get(ctx, nil)
@@ -35,7 +27,7 @@ func Volume(ctx workflow.Context, state *VolumeState) error {
 		wt.Work()
 	}
 
-	discoverNewDiscs := func(ctx workflow.Context) (response *VolumeDiscoverNewDiscsUpdateResponse, err error) {
+	discoverNewDiscs := func(ctx workflow.Context) (response *vltypes.VolumeDiscoverNewDiscsUpdateResponse, err error) {
 		defer wt.WorkIfNoError(err)
 		var discDirs []string
 		err = workflow.ExecuteActivity(
@@ -54,7 +46,7 @@ func Volume(ctx workflow.Context, state *VolumeState) error {
 				continue
 			}
 			if response == nil {
-				response = &VolumeDiscoverNewDiscsUpdateResponse{}
+				response = &vltypes.VolumeDiscoverNewDiscsUpdateResponse{}
 			}
 			response.Discovered = append(response.Discovered, disc)
 			state.Discs = append(state.Discs, disc)
