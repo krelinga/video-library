@@ -6,14 +6,14 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-func Disc(ctx workflow.Context, state *vltemp.DiscState) error {
+func DiscWF(ctx workflow.Context, state *vltemp.DiscWFState) error {
 	discId := workflow.GetInfo(ctx).WorkflowExecution.ID
 	wt := workTracker{}
 
 	bootstrap := func(ctx workflow.Context) (err error) {
 		defer wt.WorkIfNoError(err)
 
-		state = &vltemp.DiscState{}
+		state = &vltemp.DiscWFState{}
 		var videoFiles []string
 		err = workflow.ExecuteActivity(
 			workflow.WithActivityOptions(ctx, vlactivities.DiscReadVideoNamesOptions),
@@ -44,5 +44,5 @@ func Disc(ctx workflow.Context, state *vltemp.DiscState) error {
 		return err
 	}
 
-	return workflow.NewContinueAsNewError(ctx, Disc, state)
+	return workflow.NewContinueAsNewError(ctx, DiscWF, state)
 }

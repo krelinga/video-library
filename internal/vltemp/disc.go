@@ -12,7 +12,7 @@ const (
 	DiscUpdateBootstrap = "disc-update-bootstrap"
 )
 
-type DiscState struct {
+type DiscWFState struct {
 	Videos []string `json:"videos"`
 }
 
