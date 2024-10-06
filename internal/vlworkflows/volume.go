@@ -58,9 +58,9 @@ func Volume(ctx workflow.Context, state *VolumeState) error {
 			}
 			response.Discovered = append(response.Discovered, disc)
 			state.Discs = append(state.Discs, disc)
-			err = workflow.ExecuteChildWorkflow(
-				workflow.WithChildOptions(ctx, childOptions(disc)),
-				Disc, nil).Get(ctx, nil)
+			err = workflow.ExecuteActivity(
+				workflow.WithActivityOptions(ctx, vlactivities.VolumeBootstrapDiscOptions),
+				vlactivities.VolumeBootstrapDisc, volumeID, discDir).Get(ctx, nil)
 			if err != nil {
 				return
 			}

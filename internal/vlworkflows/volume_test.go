@@ -26,8 +26,8 @@ func (s *volumeTestSuite) TestFreshlyCreated() {
 }
 
 func (s *volumeTestSuite) TestDiscoverNewDiscs() {
-	s.env.RegisterWorkflow(Disc)
 	s.env.OnActivity(vlactivities.VolumeReadDiscNames, mock.Anything, "test_volume").Return([]string{"disc1", "disc2"}, nil)
+	s.env.OnActivity(vlactivities.VolumeBootstrapDisc, mock.Anything, "test_volume", "disc2").Return("test_volume/disc2", nil)
 	s.env.SetStartWorkflowOptions(client.StartWorkflowOptions{
 		ID: "test_volume",
 	})

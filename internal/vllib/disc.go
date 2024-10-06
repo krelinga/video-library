@@ -7,7 +7,8 @@ import (
 	"strings"
 )
 
-var ErrInvalidDiscID = errors.New("invalid disc name")
+var ErrInvalidDiscID = errors.New("invalid discID")
+var ErrInvalidDiscBase = errors.New("invalid discBase")
 
 func DiscParseID(discID string, volumeID, discBase *string) error {
 	parts := strings.Split(discID, "/")
@@ -23,11 +24,25 @@ func DiscParseID(discID string, volumeID, discBase *string) error {
 	return nil
 }
 
+func DiscID(volumeID, discBase string) (string, error) {
+	if err := ValidateVolumeID(volumeID); err != nil {
+		return "", err
+	}
+	if discBase == "" {
+		return "", ErrInvalidDiscBase
+	}
+	return filepath.Join(volumeID, discBase), nil
+}
+
 func DiscPath(ctx context.Context, discID string) (string, error) {
 	var volumeID, discBase string
 	err := DiscParseID(discID, &volumeID, &discBase)
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(VolumePath(ctx, volumeID), discBase), nil
+	volumePath, err := VolumePath(ctx, volumeID)
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(volumePath, discBase), nil
 }

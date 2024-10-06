@@ -9,3 +9,7 @@ type VideoFromDisc struct {
 	DiscID   string `json:"disc_id"`
 	Filename string `json:"filename"`
 }
+
+type VideoUpdateBootstrapRequest struct {
+	Lineage *VideoLineage `json:"lineage"`
+}

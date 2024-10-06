@@ -2,14 +2,13 @@ package vlworkflows
 
 import (
 	"github.com/krelinga/video-library/internal/vlactivities"
+	"github.com/krelinga/video-library/internal/vlqueues"
 	"go.temporal.io/sdk/workflow"
 )
 
 type DiscState struct {
 	Videos []string `json:"videos"`
 }
-
-const DiscBootstrapUpdate = "DiscBootstrapUpdate"
 
 func Disc(ctx workflow.Context, state *DiscState) error {
 	discId := workflow.GetInfo(ctx).WorkflowExecution.ID
@@ -28,7 +27,7 @@ func Disc(ctx workflow.Context, state *DiscState) error {
 		return
 	}
 
-	err := workflow.SetUpdateHandler(ctx, DiscBootstrapUpdate, bootstrap)
+	err := workflow.SetUpdateHandler(ctx, vlqueues.DiscUpdateBootstrap, bootstrap)
 	if err != nil {
 		return err
 	}
