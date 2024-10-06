@@ -5,12 +5,12 @@ import (
 	"errors"
 	"path/filepath"
 
-	"github.com/krelinga/video-library/internal/vltypes"
+	"github.com/krelinga/video-library/internal/vltemp"
 )
 
 var ErrCorruptVideoLineage = errors.New("corrupt video lineage")
 
-func VideoPath(ctx context.Context, videoLineage *vltypes.VideoLineage) (string, error) {
+func VideoPath(ctx context.Context, videoLineage *vltemp.VideoLineage) (string, error) {
 	switch {
 	case videoLineage.FromDisc != nil:
 		discPath, err := DiscPath(ctx, videoLineage.FromDisc.DiscID)
@@ -26,7 +26,7 @@ func VideoPath(ctx context.Context, videoLineage *vltypes.VideoLineage) (string,
 	}
 }
 
-func VideoID(videoLineage *vltypes.VideoLineage) (string, error) {
+func VideoID(videoLineage *vltemp.VideoLineage) (string, error) {
 	switch {
 	case videoLineage.FromDisc != nil:
 		if videoLineage.FromDisc.DiscID == "" {

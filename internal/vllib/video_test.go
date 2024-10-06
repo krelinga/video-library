@@ -7,7 +7,7 @@ import (
 
 	"github.com/krelinga/video-library/internal/vlconfig"
 	"github.com/krelinga/video-library/internal/vlcontext"
-	"github.com/krelinga/video-library/internal/vltypes"
+	"github.com/krelinga/video-library/internal/vltemp"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,14 +20,14 @@ func TestVideoPath(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		videoLineage  *vltypes.VideoLineage
+		videoLineage  *vltemp.VideoLineage
 		expectedPath  string
 		expectedError error
 	}{
 		{
 			name: "FromDisc with valid DiscID and Filename",
-			videoLineage: &vltypes.VideoLineage{
-				FromDisc: &vltypes.VideoFromDisc{
+			videoLineage: &vltemp.VideoLineage{
+				FromDisc: &vltemp.VideoFromDisc{
 					DiscID:   "volumeID/discID",
 					Filename: "video.mp4",
 				},
@@ -37,8 +37,8 @@ func TestVideoPath(t *testing.T) {
 		},
 		{
 			name: "FromDisc with missing Filename",
-			videoLineage: &vltypes.VideoLineage{
-				FromDisc: &vltypes.VideoFromDisc{
+			videoLineage: &vltemp.VideoLineage{
+				FromDisc: &vltemp.VideoFromDisc{
 					DiscID: "volumeID/discID",
 				},
 			},
@@ -47,8 +47,8 @@ func TestVideoPath(t *testing.T) {
 		},
 		{
 			name: "FromDisc with invalid DiscID",
-			videoLineage: &vltypes.VideoLineage{
-				FromDisc: &vltypes.VideoFromDisc{
+			videoLineage: &vltemp.VideoLineage{
+				FromDisc: &vltemp.VideoFromDisc{
 					DiscID:   "invalidDiscID",
 					Filename: "video.mp4",
 				},
@@ -58,7 +58,7 @@ func TestVideoPath(t *testing.T) {
 		},
 		{
 			name:          "Unknown lineage",
-			videoLineage:  &vltypes.VideoLineage{},
+			videoLineage:  &vltemp.VideoLineage{},
 			expectedPath:  "",
 			expectedError: ErrCorruptVideoLineage,
 		},
@@ -82,14 +82,14 @@ func TestVideoPath(t *testing.T) {
 func TestVideoID(t *testing.T) {
 	tests := []struct {
 		name          string
-		videoLineage  *vltypes.VideoLineage
+		videoLineage  *vltemp.VideoLineage
 		expectedID    string
 		expectedError error
 	}{
 		{
 			name: "FromDisc with valid DiscID and Filename",
-			videoLineage: &vltypes.VideoLineage{
-				FromDisc: &vltypes.VideoFromDisc{
+			videoLineage: &vltemp.VideoLineage{
+				FromDisc: &vltemp.VideoFromDisc{
 					DiscID:   "volumeID/discID",
 					Filename: "video.mp4",
 				},
@@ -99,8 +99,8 @@ func TestVideoID(t *testing.T) {
 		},
 		{
 			name: "FromDisc with missing Filename",
-			videoLineage: &vltypes.VideoLineage{
-				FromDisc: &vltypes.VideoFromDisc{
+			videoLineage: &vltemp.VideoLineage{
+				FromDisc: &vltemp.VideoFromDisc{
 					DiscID: "volumeID/discID",
 				},
 			},
@@ -109,8 +109,8 @@ func TestVideoID(t *testing.T) {
 		},
 		{
 			name: "FromDisc with missing DiscID",
-			videoLineage: &vltypes.VideoLineage{
-				FromDisc: &vltypes.VideoFromDisc{
+			videoLineage: &vltemp.VideoLineage{
+				FromDisc: &vltemp.VideoFromDisc{
 					Filename: "video.mp4",
 				},
 			},
@@ -119,7 +119,7 @@ func TestVideoID(t *testing.T) {
 		},
 		{
 			name:          "Unknown lineage",
-			videoLineage:  &vltypes.VideoLineage{},
+			videoLineage:  &vltemp.VideoLineage{},
 			expectedID:    "",
 			expectedError: ErrCorruptVideoLineage,
 		},

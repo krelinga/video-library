@@ -1,4 +1,4 @@
-package vltypes
+package vltemp
 
 type VolumeState struct {
 	Discs []string `json:"discs"`

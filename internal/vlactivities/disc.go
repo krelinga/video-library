@@ -6,10 +6,9 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/krelinga/video-library/internal/vltemp"
 	"github.com/krelinga/video-library/internal/vlcontext"
 	"github.com/krelinga/video-library/internal/vllib"
-	"github.com/krelinga/video-library/internal/vltypes"
+	"github.com/krelinga/video-library/internal/vltemp"
 	"go.temporal.io/sdk/client"
 )
 
@@ -36,8 +35,8 @@ var DiscReadVideoNamesOptions = lightOptions
 
 func DiscBootstrapVideo(ctx context.Context, discID, videoFilename string) (string, error) {
 	temporalClient := vlcontext.GetTemporalClient(ctx)
-	lineage := &vltypes.VideoLineage{
-		FromDisc: &vltypes.VideoFromDisc{
+	lineage := &vltemp.VideoLineage{
+		FromDisc: &vltemp.VideoFromDisc{
 			DiscID:   discID,
 			Filename: videoFilename,
 		},
@@ -47,7 +46,7 @@ func DiscBootstrapVideo(ctx context.Context, discID, videoFilename string) (stri
 		return "", err
 	}
 
-	request := &vltypes.VideoUpdateBootstrapRequest{
+	request := &vltemp.VideoUpdateBootstrapRequest{
 		Lineage: lineage,
 	}
 	opts := client.StartWorkflowOptions{

@@ -3,18 +3,17 @@ package vlworkflows
 import (
 	"github.com/krelinga/video-library/internal/vlactivities"
 	"github.com/krelinga/video-library/internal/vltemp"
-	"github.com/krelinga/video-library/internal/vltypes"
 	"go.temporal.io/sdk/workflow"
 )
 
-func Disc(ctx workflow.Context, state *vltypes.DiscState) error {
+func Disc(ctx workflow.Context, state *vltemp.DiscState) error {
 	discId := workflow.GetInfo(ctx).WorkflowExecution.ID
 	wt := workTracker{}
 
 	bootstrap := func(ctx workflow.Context) (err error) {
 		defer wt.WorkIfNoError(err)
 
-		state = &vltypes.DiscState{}
+		state = &vltemp.DiscState{}
 		var videoFiles []string
 		err = workflow.ExecuteActivity(
 			workflow.WithActivityOptions(ctx, vlactivities.DiscReadVideoNamesOptions),
