@@ -3,7 +3,6 @@ package vlworkflows
 import (
 	"path/filepath"
 
-	"github.com/krelinga/video-library/internal/vlactivities"
 	"github.com/krelinga/video-library/internal/vltemp"
 	"go.temporal.io/sdk/workflow"
 )
@@ -19,8 +18,8 @@ func VolumeWF(ctx workflow.Context, state *vltemp.VolumeWFState) error {
 		// so we need to initialize it and create the corresponding directory on-disk.
 		state = &vltemp.VolumeWFState{}
 		err := workflow.ExecuteActivity(
-			workflow.WithActivityOptions(ctx, vlactivities.VolumeMkDirOptions),
-			vlactivities.VolumeMkDir, volumeID).Get(ctx, nil)
+			workflow.WithActivityOptions(ctx, vltemp.VolumeMkDirOptions),
+			vltemp.VolumeMkDir, volumeID).Get(ctx, nil)
 		if err != nil {
 			return err
 		}
@@ -31,8 +30,8 @@ func VolumeWF(ctx workflow.Context, state *vltemp.VolumeWFState) error {
 		defer wt.WorkIfNoError(err)
 		var discDirs []string
 		err = workflow.ExecuteActivity(
-			workflow.WithActivityOptions(ctx, vlactivities.VolumeReadDiscNamesOptions),
-			vlactivities.VolumeReadDiscNames, volumeID).Get(ctx, &discDirs)
+			workflow.WithActivityOptions(ctx, vltemp.VolumeReadDiscNamesOptions),
+			vltemp.VolumeReadDiscNames, volumeID).Get(ctx, &discDirs)
 		if err != nil {
 			return
 		}
@@ -51,8 +50,8 @@ func VolumeWF(ctx workflow.Context, state *vltemp.VolumeWFState) error {
 			response.Discovered = append(response.Discovered, disc)
 			state.Discs = append(state.Discs, disc)
 			err = workflow.ExecuteActivity(
-				workflow.WithActivityOptions(ctx, vlactivities.VolumeBootstrapDiscOptions),
-				vlactivities.VolumeBootstrapDisc, volumeID, discDir).Get(ctx, nil)
+				workflow.WithActivityOptions(ctx, vltemp.VolumeBootstrapDiscOptions),
+				vltemp.VolumeBootstrapDisc, volumeID, discDir).Get(ctx, nil)
 			if err != nil {
 				return
 			}

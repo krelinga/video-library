@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/krelinga/video-library/internal/vlactivities"
 	"github.com/krelinga/video-library/internal/vltemp"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -16,7 +15,7 @@ type volumeTestSuite struct {
 }
 
 func (s *volumeTestSuite) TestFreshlyCreated() {
-	s.env.OnActivity(vlactivities.VolumeMkDir, mock.Anything, "test_volume").Return(nil)
+	s.env.OnActivity(vltemp.VolumeMkDir, mock.Anything, "test_volume").Return(nil)
 	s.env.SetStartWorkflowOptions(client.StartWorkflowOptions{
 		ID: "test_volume",
 	})
@@ -27,8 +26,8 @@ func (s *volumeTestSuite) TestFreshlyCreated() {
 }
 
 func (s *volumeTestSuite) TestDiscoverNewDiscs() {
-	s.env.OnActivity(vlactivities.VolumeReadDiscNames, mock.Anything, "test_volume").Return([]string{"disc1", "disc2"}, nil)
-	s.env.OnActivity(vlactivities.VolumeBootstrapDisc, mock.Anything, "test_volume", "disc2").Return("test_volume/disc2", nil)
+	s.env.OnActivity(vltemp.VolumeReadDiscNames, mock.Anything, "test_volume").Return([]string{"disc1", "disc2"}, nil)
+	s.env.OnActivity(vltemp.VolumeBootstrapDisc, mock.Anything, "test_volume", "disc2").Return("test_volume/disc2", nil)
 	s.env.SetStartWorkflowOptions(client.StartWorkflowOptions{
 		ID: "test_volume",
 	})

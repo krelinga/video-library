@@ -1,7 +1,6 @@
 package vlworkflows
 
 import (
-	"github.com/krelinga/video-library/internal/vlactivities"
 	"github.com/krelinga/video-library/internal/vltemp"
 	"go.temporal.io/sdk/workflow"
 )
@@ -16,16 +15,16 @@ func DiscWF(ctx workflow.Context, state *vltemp.DiscWFState) error {
 		state = &vltemp.DiscWFState{}
 		var videoFiles []string
 		err = workflow.ExecuteActivity(
-			workflow.WithActivityOptions(ctx, vlactivities.DiscReadVideoNamesOptions),
-			vlactivities.DiscReadVideoNames, discId).Get(ctx, &videoFiles)
+			workflow.WithActivityOptions(ctx, vltemp.DiscReadVideoNamesOptions),
+			vltemp.DiscReadVideoNames, discId).Get(ctx, &videoFiles)
 		if err != nil {
 			return
 		}
 		for _, videoFile := range state.Videos {
 			var videoId string
 			err = workflow.ExecuteActivity(
-				workflow.WithActivityOptions(ctx, vlactivities.DiscBootstrapVideoOptions),
-				vlactivities.DiscBootstrapVideo, discId, videoFile).Get(ctx, &videoId)
+				workflow.WithActivityOptions(ctx, vltemp.DiscBootstrapVideoOptions),
+				vltemp.DiscBootstrapVideo, discId, videoFile).Get(ctx, &videoId)
 			if err != nil {
 				return err
 			}
