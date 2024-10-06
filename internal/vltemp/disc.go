@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	DiscUpdateBootstrap = "disc-update-bootstrap"
+	DiscWFUpdateNameBootstrap = "DiscWFUpdateBootstrap"
 )
 
 type DiscWFState struct {
@@ -152,7 +152,7 @@ func DiscWF(ctx workflow.Context, state *DiscWFState) error {
 		return
 	}
 
-	err := workflow.SetUpdateHandler(ctx, DiscUpdateBootstrap, bootstrap)
+	err := workflow.SetUpdateHandler(ctx, DiscWFUpdateNameBootstrap, bootstrap)
 	if err != nil {
 		return err
 	}

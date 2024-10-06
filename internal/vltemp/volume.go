@@ -89,7 +89,7 @@ func VolumeBootstrapDisc(ctx context.Context, volumeID, discBase string) (string
 	}
 	updateHandle, err := temporalClient.UpdateWorkflow(ctx, client.UpdateWorkflowOptions{
 		UpdateID:            uuid.New().String(),
-		UpdateName:          DiscUpdateBootstrap,
+		UpdateName:          DiscWFUpdateNameBootstrap,
 		WorkflowID:          discID,
 		WaitForStage:        client.WorkflowUpdateStageCompleted,
 		FirstExecutionRunID: wf.GetRunID(),
@@ -106,7 +106,7 @@ func VolumeBootstrapDisc(ctx context.Context, volumeID, discBase string) (string
 
 var VolumeBootstrapDiscOptions = lightOptions
 
-const VolumeWFUpdateDiscoverNewDiscsName = "VolumeWFUpdateDiscoverNewDiscs"
+const VolumeWFUpdateNameDiscoverNewDiscs = "VolumeWFUpdateDiscoverNewDiscs"
 
 func VolumeWF(ctx workflow.Context, state *VolumeWFState) error {
 	volumeID := workflow.GetInfo(ctx).WorkflowExecution.ID
@@ -158,7 +158,7 @@ func VolumeWF(ctx workflow.Context, state *VolumeWFState) error {
 		return
 	}
 
-	err := workflow.SetUpdateHandler(ctx, VolumeWFUpdateDiscoverNewDiscsName, discoverNewDiscs)
+	err := workflow.SetUpdateHandler(ctx, VolumeWFUpdateNameDiscoverNewDiscs, discoverNewDiscs)
 	if err != nil {
 		return err
 	}

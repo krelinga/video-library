@@ -35,7 +35,7 @@ func (s *volumeTestSuite) TestDiscoverNewDiscs() {
 	}
 	s.env.RegisterDelayedCallback(
 		func() {
-			s.env.UpdateWorkflowByID("test_volume", VolumeWFUpdateDiscoverNewDiscsName, "",
+			s.env.UpdateWorkflowByID("test_volume", VolumeWFUpdateNameDiscoverNewDiscs, "",
 				assertComplete(s.Assertions, &VolumeWFUpdateDiscoverNewDiscsResponse{
 					Discovered: []string{"test_volume/disc2"},
 				}, nil), nil)
