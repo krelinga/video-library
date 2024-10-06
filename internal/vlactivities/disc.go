@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/krelinga/video-library/internal/vlconst"
 	"github.com/krelinga/video-library/internal/vlcontext"
 	"github.com/krelinga/video-library/internal/vllib"
-	"github.com/krelinga/video-library/internal/vlconst"
 	"github.com/krelinga/video-library/internal/vltypes"
 	"go.temporal.io/sdk/client"
 )
@@ -73,3 +73,5 @@ func DiscBootstrapVideo(ctx context.Context, discID, videoFilename string) (stri
 	}
 	return videoID, nil
 }
+
+var DiscBootstrapVideoOptions = lightOptions
