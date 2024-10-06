@@ -9,10 +9,12 @@
         "vlactivities",
         "vlapi",
         "vlconfig",
+        "vlconst",
         "vlcontext",
         "vllib",
         "vlproto",
         "vlqueues",
+        "vltypes",
         "vlvolume",
         "vlworkflows"
     ]
