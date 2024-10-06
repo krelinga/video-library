@@ -8,16 +8,16 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-const VolumeDiscoverNewDiscsUpdate = "VolumeDiscoverNewDiscsUpdate"
+const VolumeWFUpdateDiscoverNewDiscsName = "VolumeWFUpdateDiscoverNewDiscs"
 
-func Volume(ctx workflow.Context, state *vltemp.VolumeState) error {
+func VolumeWF(ctx workflow.Context, state *vltemp.VolumeWFState) error {
 	volumeID := workflow.GetInfo(ctx).WorkflowExecution.ID
 
 	wt := workTracker{}
 	if state == nil {
 		// A nil state indicates that this is a freshly-created Volume,
 		// so we need to initialize it and create the corresponding directory on-disk.
-		state = &vltemp.VolumeState{}
+		state = &vltemp.VolumeWFState{}
 		err := workflow.ExecuteActivity(
 			workflow.WithActivityOptions(ctx, vlactivities.VolumeMkDirOptions),
 			vlactivities.VolumeMkDir, volumeID).Get(ctx, nil)
@@ -27,7 +27,7 @@ func Volume(ctx workflow.Context, state *vltemp.VolumeState) error {
 		wt.Work()
 	}
 
-	discoverNewDiscs := func(ctx workflow.Context) (response *vltemp.VolumeDiscoverNewDiscsUpdateResponse, err error) {
+	discoverNewDiscs := func(ctx workflow.Context) (response *vltemp.VolumeWFUpdateDiscoverNewDiscsResponse, err error) {
 		defer wt.WorkIfNoError(err)
 		var discDirs []string
 		err = workflow.ExecuteActivity(
@@ -46,7 +46,7 @@ func Volume(ctx workflow.Context, state *vltemp.VolumeState) error {
 				continue
 			}
 			if response == nil {
-				response = &vltemp.VolumeDiscoverNewDiscsUpdateResponse{}
+				response = &vltemp.VolumeWFUpdateDiscoverNewDiscsResponse{}
 			}
 			response.Discovered = append(response.Discovered, disc)
 			state.Discs = append(state.Discs, disc)
@@ -60,7 +60,7 @@ func Volume(ctx workflow.Context, state *vltemp.VolumeState) error {
 		return
 	}
 
-	err := workflow.SetUpdateHandler(ctx, VolumeDiscoverNewDiscsUpdate, discoverNewDiscs)
+	err := workflow.SetUpdateHandler(ctx, VolumeWFUpdateDiscoverNewDiscsName, discoverNewDiscs)
 	if err != nil {
 		return err
 	}
@@ -70,5 +70,5 @@ func Volume(ctx workflow.Context, state *vltemp.VolumeState) error {
 		return err
 	}
 
-	return workflow.NewContinueAsNewError(ctx, Volume, state)
+	return workflow.NewContinueAsNewError(ctx, VolumeWF, state)
 }

@@ -20,10 +20,10 @@ func (s *volumeTestSuite) TestFreshlyCreated() {
 	s.env.SetStartWorkflowOptions(client.StartWorkflowOptions{
 		ID: "test_volume",
 	})
-	s.env.ExecuteWorkflow(Volume, nil)
+	s.env.ExecuteWorkflow(VolumeWF, nil)
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
-	assertContinuedWithState(s.Assertions, err, &vltemp.VolumeState{})
+	assertContinuedWithState(s.Assertions, err, &vltemp.VolumeWFState{})
 }
 
 func (s *volumeTestSuite) TestDiscoverNewDiscs() {
@@ -32,20 +32,20 @@ func (s *volumeTestSuite) TestDiscoverNewDiscs() {
 	s.env.SetStartWorkflowOptions(client.StartWorkflowOptions{
 		ID: "test_volume",
 	})
-	state := &vltemp.VolumeState{
+	state := &vltemp.VolumeWFState{
 		Discs: []string{"test_volume/disc1"},
 	}
 	s.env.RegisterDelayedCallback(
 		func() {
-			s.env.UpdateWorkflowByID("test_volume", VolumeDiscoverNewDiscsUpdate, "",
-				assertComplete(s.Assertions, &vltemp.VolumeDiscoverNewDiscsUpdateResponse{
+			s.env.UpdateWorkflowByID("test_volume", VolumeWFUpdateDiscoverNewDiscsName, "",
+				assertComplete(s.Assertions, &vltemp.VolumeWFUpdateDiscoverNewDiscsResponse{
 					Discovered: []string{"test_volume/disc2"},
 				}, nil), nil)
 		}, time.Hour)
-	s.env.ExecuteWorkflow(Volume, state)
+	s.env.ExecuteWorkflow(VolumeWF, state)
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
-	assertContinuedWithState(s.Assertions, err, &vltemp.VolumeState{
+	assertContinuedWithState(s.Assertions, err, &vltemp.VolumeWFState{
 		Discs: []string{"test_volume/disc1", "test_volume/disc2"},
 	})
 }
