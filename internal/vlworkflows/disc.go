@@ -2,7 +2,7 @@ package vlworkflows
 
 import (
 	"github.com/krelinga/video-library/internal/vlactivities"
-	"github.com/krelinga/video-library/internal/vlconst"
+	"github.com/krelinga/video-library/internal/vltemp"
 	"github.com/krelinga/video-library/internal/vltypes"
 	"go.temporal.io/sdk/workflow"
 )
@@ -35,7 +35,7 @@ func Disc(ctx workflow.Context, state *vltypes.DiscState) error {
 		return
 	}
 
-	err := workflow.SetUpdateHandler(ctx, vlconst.DiscUpdateBootstrap, bootstrap)
+	err := workflow.SetUpdateHandler(ctx, vltemp.DiscUpdateBootstrap, bootstrap)
 	if err != nil {
 		return err
 	}

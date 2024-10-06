@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/krelinga/video-library/internal/vlconst"
+	"github.com/krelinga/video-library/internal/vltemp"
 	"github.com/krelinga/video-library/internal/vlcontext"
 	"github.com/krelinga/video-library/internal/vllib"
 	"github.com/krelinga/video-library/internal/vltypes"
@@ -53,13 +53,13 @@ func DiscBootstrapVideo(ctx context.Context, discID, videoFilename string) (stri
 	opts := client.StartWorkflowOptions{
 		ID: videoID,
 	}
-	wf, err := temporalClient.ExecuteWorkflow(ctx, opts, vlconst.Disc, nil)
+	wf, err := temporalClient.ExecuteWorkflow(ctx, opts, vltemp.Disc, nil)
 	if err != nil {
 		return "", err
 	}
 	updateHandle, err := temporalClient.UpdateWorkflow(ctx, client.UpdateWorkflowOptions{
 		UpdateID:            uuid.New().String(),
-		UpdateName:          vlconst.VideoUpdateBootstrap,
+		UpdateName:          vltemp.VideoUpdateBootstrap,
 		WorkflowID:          videoID,
 		WaitForStage:        client.WorkflowUpdateStageCompleted,
 		FirstExecutionRunID: wf.GetRunID(),

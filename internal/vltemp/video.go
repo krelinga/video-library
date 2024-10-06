@@ -1,4 +1,4 @@
-package vlconst
+package vltemp
 
 const (
 	Video                        = "video"
