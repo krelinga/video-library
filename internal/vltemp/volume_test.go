@@ -16,6 +16,7 @@ type volumeTestSuite struct {
 
 func (s *volumeTestSuite) TestFreshlyCreated() {
 	s.env.OnActivity(actVolumeMkDir, mock.Anything, VolumeWfId("test_volume")).Return(nil)
+	s.env.OnActivity(actVolumeReadDiscNames, mock.Anything, VolumeWfId("test_volume")).Return([]string{}, nil)
 	s.env.SetStartWorkflowOptions(client.StartWorkflowOptions{
 		ID: "test_volume",
 	})
