@@ -170,3 +170,34 @@ func VolumeWF(ctx workflow.Context, state *VolumeWFState) error {
 
 	return workflow.NewContinueAsNewError(ctx, VolumeWF, state)
 }
+
+// A more-refined string to handle Temporal Workflow IDs for Volume workflows.
+//
+// Use NewVolumeWfId() to create a new VolumeWfId.  You can also directly case from a string
+// with `VolumeWfId("my-volume")`, but this will not validate the ID.  You can validate the ID
+// with the Validate() method.  Any other methods called on an invalid VolumeWfId will panic.
+type VolumeWfId string
+
+// Checks if the VolumeWfId is valid.
+func (id VolumeWfId) Validate() error {
+	if !nameIsValid(string(id)) {
+		return ErrInvalidWorkflowId
+	}
+	return nil
+}
+
+// Returns the name of the Volume.
+//
+// Panics if the VolumeWfId is invalid.
+func (id VolumeWfId) Name() string {
+	if err := id.Validate(); err != nil {
+		panic(err)
+	}
+	return string(id)
+}
+
+// Returns a VolumeWfId for the given workflow name, or an error if the name is invalid.
+func NewVolumeWfId(name string) (VolumeWfId, error) {
+	id := VolumeWfId(name)
+	return id, id.Validate()
+}

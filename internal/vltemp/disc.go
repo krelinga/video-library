@@ -2,7 +2,6 @@ package vltemp
 
 import (
 	"context"
-	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -18,47 +17,15 @@ const (
 )
 
 type DiscWFState struct {
-	Videos []string `json:"videos"`
+	Videos []VideoWfId `json:"videos"`
 }
 
-var ErrInvalidDiscID = errors.New("invalid discID")
-var ErrInvalidDiscBase = errors.New("invalid discBase")
-
-func DiscParseID(discID string, volumeID, discBase *string) error {
-	parts := strings.Split(discID, "/")
-	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
-		return ErrInvalidDiscID
-	}
-	if volumeID != nil {
-		*volumeID = parts[0]
-	}
-	if discBase != nil {
-		*discBase = parts[1]
-	}
-	return nil
-}
-
-func DiscID(volumeID, discBase string) (string, error) {
-	if err := ValidateVolumeID(volumeID); err != nil {
-		return "", err
-	}
-	if discBase == "" {
-		return "", ErrInvalidDiscBase
-	}
-	return filepath.Join(volumeID, discBase), nil
-}
-
-func DiscPath(ctx context.Context, discID string) (string, error) {
-	var volumeID, discBase string
-	err := DiscParseID(discID, &volumeID, &discBase)
+func DiscPath(ctx context.Context, discWfId DiscWfId) (string, error) {
+	volumePath, err := VolumePath(ctx, discWfId.VolumeWfId())
 	if err != nil {
 		return "", err
 	}
-	volumePath, err := VolumePath(ctx, volumeID)
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(volumePath, discBase), nil
+	return filepath.Join(volumePath, discWfId.Name()), nil
 }
 
 func DiscReadVideoNames(ctx context.Context, discID string) ([]string, error) {
@@ -90,7 +57,7 @@ func DiscBootstrapVideo(ctx context.Context, discID, videoFilename string) (stri
 			Filename: videoFilename,
 		},
 	}
-	videoID, err := VideoID(lineage)
+	videoID, err := LegacyVideoID(lineage)
 	if err != nil {
 		return "", err
 	}
@@ -163,4 +130,50 @@ func DiscWF(ctx workflow.Context, state *DiscWFState) error {
 	}
 
 	return workflow.NewContinueAsNewError(ctx, DiscWF, state)
+}
+
+// A more-refined string to handle Temporal Workflow IDs for Disc workflows.
+//
+// Use NewDiscWfId() to create a new DiscWfId.  You can also directly case from a string
+// with `DiscWfId("my-disc")`, but this will not validate the ID.  You can validate the ID
+// with the Validate() method.  Any other methods called on an invalid DiscWfId will panic.
+type DiscWfId string
+
+func (id DiscWfId) parse() (volumeWfId VolumeWfId, name string, err error) {
+	parts := strings.Split(string(id), "/")
+	if len(parts) != 2 || !nameIsValid(parts[1]) {
+		err = ErrInvalidWorkflowId
+		return
+	}
+	name = parts[1]
+	volumeWfId, err = NewVolumeWfId(parts[0])
+	return
+}
+
+// Validates the DiscWfId.
+func (id DiscWfId) Validate() error {
+	_, _, err := id.parse()
+	return err
+}
+
+// Returns the VolumeWfId of the DiscWfId.
+//
+// Panics if the DiscWfId is invalid.
+func (id DiscWfId) VolumeWfId() VolumeWfId {
+	volumeWfId, _, err := id.parse()
+	if err != nil {
+		panic(err)
+	}
+	return volumeWfId
+}
+
+// Returns the name of the Disc.
+//
+// Panics if the DiscWfId is invalid.
+func (id DiscWfId) Name() string {
+	_, ame, err := id.parse()
+	if err != nil {
+		panic(err)
+	}
+	return ame
 }

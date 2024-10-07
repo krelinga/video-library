@@ -126,7 +126,7 @@ func TestVideoID(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			id, err := VideoID(tt.videoLineage)
+			id, err := LegacyVideoID(tt.videoLineage)
 			if tt.expectedError != nil {
 				assert.Empty(t, id)
 				assert.Error(t, err)

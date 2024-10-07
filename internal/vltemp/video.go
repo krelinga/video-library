@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"path/filepath"
+	"strings"
 )
 
 const (
@@ -42,7 +43,7 @@ func VideoPath(ctx context.Context, videoLineage *VideoLineage) (string, error) 
 	}
 }
 
-func VideoID(videoLineage *VideoLineage) (string, error) {
+func LegacyVideoID(videoLineage *VideoLineage) (string, error) {
 	switch {
 	case videoLineage.FromDisc != nil:
 		if videoLineage.FromDisc.DiscID == "" {
@@ -55,4 +56,59 @@ func VideoID(videoLineage *VideoLineage) (string, error) {
 	default:
 		return "", errors.Join(ErrCorruptVideoLineage, errors.New("unknown lineage"))
 	}
+}
+
+type VideoWfId string
+
+type parsedVideoWfId struct {
+	protocol string
+
+	// Only one of these will be set depending on protocol.
+	discWfId DiscWfId
+	// other types here in the future
+}
+
+func (id VideoWfId) parse() (p parsedVideoWfId, err error) {
+	parts := strings.Split(string(id), ":")
+	if len(parts) != 2 {
+		err = ErrInvalidWorkflowId
+		return
+	}
+	p.protocol = parts[0]
+
+	other := parts[1]
+	switch p.protocol {
+	case "disc":
+		p.discWfId = DiscWfId(other)
+		err = p.discWfId.Validate()
+	default:
+		err = ErrInvalidWorkflowId
+	}
+	return
+}
+
+func (id VideoWfId) Validate() error {
+	_, err := id.parse()
+	return err
+}
+
+func (id VideoWfId) Protocol() string {
+	parsed, err := id.parse()
+	if err != nil {
+		panic(err)
+	}
+	return parsed.protocol
+}
+
+func (id VideoWfId) DiscWfId() (discWfId DiscWfId, ok bool) {
+	parsed, err := id.parse()
+	if err != nil{
+		panic(err)
+	}
+	if parsed.protocol != "disc" {
+		return
+	}
+	discWfId = parsed.discWfId
+	ok = true
+	return
 }
