@@ -44,7 +44,7 @@ func actDiscReadVideoNames(ctx context.Context, discWfId DiscWfId) ([]string, er
 
 var actDiscReadVideoNamesOptions = lightOptions
 
-func actDiscBootstrapVideo(ctx context.Context, discWfId DiscWfId, videoFilename string) (VideoWfId, error) {
+func actDiscNewVideo(ctx context.Context, discWfId DiscWfId, videoFilename string) (VideoWfId, error) {
 	temporalClient := vlcontext.GetTemporalClient(ctx)
 	videoWfId, err := NewVideoWfIdFromDisc(discWfId, videoFilename)
 	if err != nil {
@@ -88,7 +88,7 @@ func discWfNew(ctx workflow.Context, discWfId DiscWfId, state *DiscWFState) erro
 		var videoWfId VideoWfId
 		err = workflow.ExecuteActivity(
 			workflow.WithActivityOptions(ctx, actDiscBootstrapVideoOptions),
-			actDiscBootstrapVideo, discWfId, videoFile).Get(ctx, &videoWfId)
+			actDiscNewVideo, discWfId, videoFile).Get(ctx, &videoWfId)
 		if err != nil {
 			return err
 		}
