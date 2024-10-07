@@ -2,7 +2,6 @@ package vltemp
 
 import (
 	"context"
-	"errors"
 	"testing"
 
 	"github.com/krelinga/video-library/internal/vlconfig"
@@ -24,30 +23,21 @@ func TestVideoPath(t *testing.T) {
 		expectedError error
 	}{
 		{
-			name:          "FromDisc with valid DiscID and Filename",
-			videoWfId:     VideoWfId("disc:volumeID/discID/video.mp4"),
-			expectedPath:  "/mocked/path/volumeID/discID/video.mp4",
-			expectedError: nil,
+			name:         "FromDisc with valid DiscID and Filename",
+			videoWfId:    VideoWfId("disc:volumeID/discID/video.mp4"),
+			expectedPath: "/mocked/path/volumeID/discID/video.mp4",
 		},
 		{
-			name:          "FromFilepath with valid Filepath",
-			videoWfId:     VideoWfId("filepath:/path/to/the/v/i/d/e/o.mp4"),
-			expectedPath:  "/path/to/the/v/i/d/e/o.mp4",
-			expectedError: nil,
+			name:         "FromFilepath with valid Filepath",
+			videoWfId:    VideoWfId("filepath:/path/to/the/v/i/d/e/o.mp4"),
+			expectedPath: "/path/to/the/v/i/d/e/o.mp4",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			path, err := VideoPath(ctx, tt.videoWfId)
-			if tt.expectedError != nil {
-				assert.Empty(t, path)
-				assert.Error(t, err)
-				assert.True(t, errors.Is(err, tt.expectedError))
-			} else {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expectedPath, path)
-			}
+			path := VideoPath(ctx, tt.videoWfId)
+			assert.Equal(t, tt.expectedPath, path)
 		})
 	}
 }

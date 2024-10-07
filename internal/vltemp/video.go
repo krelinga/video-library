@@ -11,12 +11,12 @@ const (
 	VideoUpdateBootstrap = "video-update-bootstrap"
 )
 
-func VideoPath(ctx context.Context, videoWfId VideoWfId) (string, error) {
+func VideoPath(ctx context.Context, videoWfId VideoWfId) string {
 	if discWfId, discFilepath, ok := videoWfId.FromDisc(); ok {
 		discPath := DiscPath(ctx, discWfId)
-		return filepath.Join(discPath, discFilepath), nil
+		return filepath.Join(discPath, discFilepath)
 	} else if filepath, ok := videoWfId.FromFilepath(); ok {
-		return filepath, nil
+		return filepath
 	} else {
 		panic("unexpected protocol " + videoWfId.Protocol())
 	}
