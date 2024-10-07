@@ -1,9 +1,11 @@
 package vltemp
 
 import (
+	"testing"
 	"time"
 
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
 	"go.temporal.io/sdk/client"
 )
 
@@ -44,4 +46,8 @@ func (s *volumeTestSuite) TestDiscoverNewDiscs() {
 	assertContinuedWithState(s.Assertions, err, &VolumeWFState{
 		Discs: []string{"test_volume/disc1", "test_volume/disc2"},
 	})
+}
+
+func TestVolumeWf(t *testing.T) {
+	suite.Run(t, new(volumeTestSuite))
 }
