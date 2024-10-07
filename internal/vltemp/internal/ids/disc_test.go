@@ -23,13 +23,13 @@ func TestNewDiscWfId(t *testing.T) {
 			name:             "invalid discWfId with empty discName",
 			volumeWfIdString: "volume2",
 			discName:         "",
-			wantErr:          ErrInvalidDiscNameString,
+			wantErr:          ErrInvalidWorkflowId,
 		},
 		{
 			name:             "invalid discWfId with slash in discName",
 			volumeWfIdString: "volume3",
 			discName:         "disc/3",
-			wantErr:          ErrInvalidDiscNameString,
+			wantErr:          ErrInvalidWorkflowId,
 		},
 	}
 
@@ -71,12 +71,12 @@ func TestNewDiscWfIdFromString(t *testing.T) {
 		{
 			name:     "invalid discWfId string with missing slash",
 			asString: "volume2disc2",
-			wantErr:  ErrInvalidDiscWfIdString,
+			wantErr:  ErrInvalidWorkflowId,
 		},
 		{
 			name:     "invalid discWfId string with empty parts",
 			asString: "volume3/",
-			wantErr:  ErrInvalidDiscNameString,
+			wantErr:  ErrInvalidWorkflowId,
 		},
 	}
 

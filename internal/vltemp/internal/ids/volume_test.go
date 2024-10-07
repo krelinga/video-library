@@ -35,7 +35,7 @@ func TestNewVolumeWfId(t *testing.T) {
 			if tt.expectErr {
 				assert.Error(t, err)
 				assert.Nil(t, id)
-				assert.Equal(t, ErrInvalidVolumeName, err)
+				assert.Equal(t, ErrInvalidWorkflowId, err)
 			} else {
 				assert.NoError(t, err)
 				assert.NotNil(t, id)

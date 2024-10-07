@@ -2,7 +2,6 @@ package ids
 
 import (
 	"encoding/json"
-	"errors"
 	"strings"
 )
 
@@ -41,11 +40,9 @@ func (id *volumeWfIdImpl) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-var ErrInvalidVolumeName = errors.New("invalid volume name")
-
 func newVolumeWfIdImpl(name string) (*volumeWfIdImpl, error) {
 	if name == "" || strings.Contains(name, "/") {
-		return nil, ErrInvalidVolumeName
+		return nil, ErrInvalidWorkflowId
 	}
 	return &volumeWfIdImpl{name: name}, nil
 }

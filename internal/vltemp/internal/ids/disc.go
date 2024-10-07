@@ -2,7 +2,6 @@ package ids
 
 import (
 	"encoding/json"
-	"errors"
 	"strings"
 )
 
@@ -47,25 +46,21 @@ func (id *discWfIdImpl) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-var ErrInvalidDiscNameString = errors.New("invalid disc name string")
-
 func newDiscWfIdImpl(volumeWfId VolumeWfId, discName string) (*discWfIdImpl, error) {
 	if discName == "" || strings.Contains(discName, "/") {
-		return nil, ErrInvalidDiscNameString
+		return nil, ErrInvalidWorkflowId
 	}
 	return &discWfIdImpl{volumeWfId: volumeWfId, discName: discName}, nil
 }
 
-var ErrInvalidDiscWfIdString = errors.New("invalid disc workflow id string")
-
 func newDiscWfIdImplFromString(asString string) (*discWfIdImpl, error) {
 	parts := strings.Split(asString, "/")
 	if len(parts) != 2 {
-		return nil, ErrInvalidDiscWfIdString
+		return nil, ErrInvalidWorkflowId
 	}
 	volumeWfId, err := NewVolumeWfId(parts[0])
 	if err != nil {
-		return nil, ErrInvalidDiscWfIdString
+		return nil, ErrInvalidWorkflowId
 	}
 	return newDiscWfIdImpl(volumeWfId, parts[1])
 }
