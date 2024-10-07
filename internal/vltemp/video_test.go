@@ -87,3 +87,45 @@ func TestNewVideoWfIdFromDisc(t *testing.T) {
 		})
 	}
 }
+func TestNewVideoWfIdFromFilepath(t *testing.T) {
+	tests := []struct {
+		name          string
+		filepath      string
+		expectedId    VideoWfId
+		expectedError error
+	}{
+		{
+			name:          "Valid Filepath",
+			filepath:      "/path/to/video.mp4",
+			expectedId:    VideoWfId("filepath:/path/to/video.mp4"),
+			expectedError: nil,
+		},
+		{
+			name:          "Invalid Filepath with colon",
+			filepath:      "/path/to/invalid:video.mp4",
+			expectedId:    "",
+			expectedError: ErrInvalidWorkflowId,
+		},
+		{
+			name:          "Invalid Filepath with relative path",
+			filepath:      "relative/path/to/video.mp4",
+			expectedId:    "",
+			expectedError: ErrInvalidWorkflowId,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			id, err := NewVideoWfIdFromFilepath(tt.filepath)
+			if tt.expectedError != nil {
+				assert.ErrorIs(t, err, tt.expectedError)
+				assert.Panics(t, func() { id.Protocol() })
+				assert.Panics(t, func() { id.FromDisc() })
+				assert.Panics(t, func() { id.FromFilepath() })
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expectedId, id)
+			}
+		})
+	}
+}
