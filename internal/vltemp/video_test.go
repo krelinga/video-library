@@ -41,3 +41,49 @@ func TestVideoPath(t *testing.T) {
 		})
 	}
 }
+func TestNewVideoWfIdFromDisc(t *testing.T) {
+	tests := []struct {
+		name          string
+		discWfId      DiscWfId
+		videoFileName string
+		expectedId    VideoWfId
+		expectedError error
+	}{
+		{
+			name:          "Valid DiscWfId and VideoFileName",
+			discWfId:      DiscWfId("volumeID/discID"),
+			videoFileName: "video.mp4",
+			expectedId:    VideoWfId("disc:volumeID/discID/video.mp4"),
+			expectedError: nil,
+		},
+		{
+			name:          "Invalid VideoFileName with subdirectory",
+			discWfId:      DiscWfId("volumeID/discID"),
+			videoFileName: "invalid/video.mp4",
+			expectedId:    "",
+			expectedError: ErrInvalidWorkflowId,
+		},
+		{
+			name:          "Invalid VideoFileName with colon",
+			discWfId:      DiscWfId("volumeID/discID"),
+			videoFileName: "invalid:video.mp4",
+			expectedId:    "",
+			expectedError: ErrInvalidWorkflowId,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			id, err := NewVideoWfIdFromDisc(tt.discWfId, tt.videoFileName)
+			if tt.expectedError != nil {
+				assert.ErrorIs(t, err, tt.expectedError)
+				assert.Panics(t, func() { id.Protocol() })
+				assert.Panics(t, func() { id.FromDisc() })
+				assert.Panics(t, func() { id.FromFilepath() })
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expectedId, id)
+			}
+		})
+	}
+}

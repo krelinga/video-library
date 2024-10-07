@@ -47,7 +47,7 @@ func (id VideoWfId) parse() (p parsedVideoWfId, err error) {
 	switch p.protocol {
 	case "disc":
 		parts := strings.Split(other, "/")
-		if len(parts) < 3 {
+		if len(parts) != 3 {
 			err = ErrInvalidWorkflowId
 			return
 		}
@@ -56,7 +56,7 @@ func (id VideoWfId) parse() (p parsedVideoWfId, err error) {
 		if err != nil {
 			return
 		}
-		p.discFilename = strings.Join(parts[2:], "/")
+		p.discFilename = parts[2]
 		if !pathIsValid(p.discFilename) {
 			err = ErrInvalidWorkflowId
 			return
