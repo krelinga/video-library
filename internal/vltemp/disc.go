@@ -77,7 +77,10 @@ func actDiscBootstrapVideo(ctx context.Context, discWfId DiscWfId, videoFilename
 var actDiscBootstrapVideoOptions = lightOptions
 
 func DiscWF(ctx workflow.Context, state *DiscWFState) error {
-	discId := workflow.GetInfo(ctx).WorkflowExecution.ID
+	discWfId := DiscWfId(workflow.GetInfo(ctx).WorkflowExecution.ID)
+	if err := discWfId.Validate(); err != nil {
+		return err
+	}
 	wt := workTracker{}
 
 	bootstrap := func(ctx workflow.Context) (err error) {
@@ -87,7 +90,7 @@ func DiscWF(ctx workflow.Context, state *DiscWFState) error {
 		var videoFiles []string
 		err = workflow.ExecuteActivity(
 			workflow.WithActivityOptions(ctx, actDiscReadVideoNamesOptions),
-			actDiscReadVideoNames, discId).Get(ctx, &videoFiles)
+			actDiscReadVideoNames, discWfId).Get(ctx, &videoFiles)
 		if err != nil {
 			return
 		}
@@ -95,7 +98,7 @@ func DiscWF(ctx workflow.Context, state *DiscWFState) error {
 			var videoWfId VideoWfId
 			err = workflow.ExecuteActivity(
 				workflow.WithActivityOptions(ctx, actDiscBootstrapVideoOptions),
-				actDiscBootstrapVideo, discId, videoFile).Get(ctx, &videoWfId)
+				actDiscBootstrapVideo, discWfId, videoFile).Get(ctx, &videoWfId)
 			if err != nil {
 				return err
 			}
