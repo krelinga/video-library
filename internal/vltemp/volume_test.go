@@ -14,7 +14,7 @@ type volumeTestSuite struct {
 	testSuite
 }
 
-func (s *volumeTestSuite) TestFreshlyCreated() {
+func (s *volumeTestSuite) TestFreshlyCreatedNoDiscs() {
 	s.env.OnActivity(actVolumeMkDir, mock.Anything, VolumeWfId("test_volume")).Return(nil)
 	s.env.OnActivity(actVolumeReadDiscNames, mock.Anything, VolumeWfId("test_volume")).Return([]string{}, nil)
 	s.env.SetStartWorkflowOptions(client.StartWorkflowOptions{
@@ -24,6 +24,21 @@ func (s *volumeTestSuite) TestFreshlyCreated() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	assertContinuedWithState(s.Assertions, err, &VolumeWFState{})
+}
+
+func (s *volumeTestSuite) TestFreshlyCreatedWithDiscs() {
+	s.env.OnActivity(actVolumeMkDir, mock.Anything, VolumeWfId("test_volume")).Return(nil)
+	s.env.OnActivity(actVolumeReadDiscNames, mock.Anything, VolumeWfId("test_volume")).Return([]string{"disc1"}, nil)
+	s.env.OnActivity(actVolumeBootstrapDisc, mock.Anything, VolumeWfId("test_volume"), "disc1").Return(DiscWfId("test_volume/disc1"), nil)
+	s.env.SetStartWorkflowOptions(client.StartWorkflowOptions{
+		ID: "test_volume",
+	})
+	s.env.ExecuteWorkflow(VolumeWF, nil)
+	s.True(s.env.IsWorkflowCompleted())
+	err := s.env.GetWorkflowError()
+	assertContinuedWithState(s.Assertions, err, &VolumeWFState{
+		Discs: []DiscWfId{DiscWfId("test_volume/disc1")},
+	})
 }
 
 func (s *volumeTestSuite) TestDiscoverNewDiscs() {
