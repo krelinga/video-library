@@ -76,6 +76,27 @@ func actDiscBootstrapVideo(ctx context.Context, discWfId DiscWfId, videoFilename
 
 var actDiscBootstrapVideoOptions = lightOptions
 
+func discWfNew(ctx workflow.Context, discWfId DiscWfId, state *DiscWFState) error {
+	var videoFiles []string
+	err := workflow.ExecuteActivity(
+		workflow.WithActivityOptions(ctx, actDiscReadVideoNamesOptions),
+		actDiscReadVideoNames, discWfId).Get(ctx, &videoFiles)
+	if err != nil {
+		return err
+	}
+	for _, videoFile := range state.Videos {
+		var videoWfId VideoWfId
+		err = workflow.ExecuteActivity(
+			workflow.WithActivityOptions(ctx, actDiscBootstrapVideoOptions),
+			actDiscBootstrapVideo, discWfId, videoFile).Get(ctx, &videoWfId)
+		if err != nil {
+			return err
+		}
+		state.Videos = append(state.Videos, videoWfId)
+	}
+	return nil
+}
+
 func DiscWF(ctx workflow.Context, state *DiscWFState) error {
 	discWfId := DiscWfId(workflow.GetInfo(ctx).WorkflowExecution.ID)
 	if err := discWfId.Validate(); err != nil {
@@ -83,28 +104,13 @@ func DiscWF(ctx workflow.Context, state *DiscWFState) error {
 	}
 	wt := workTracker{}
 
-	bootstrap := func(ctx workflow.Context) (err error) {
-		defer wt.WorkIfNoError(err)
-
+	// TODO: don't rely on an update to do this, just do it as soon as the workflow starts
+	bootstrap := func(ctx workflow.Context) error {
 		state = &DiscWFState{}
-		var videoFiles []string
-		err = workflow.ExecuteActivity(
-			workflow.WithActivityOptions(ctx, actDiscReadVideoNamesOptions),
-			actDiscReadVideoNames, discWfId).Get(ctx, &videoFiles)
-		if err != nil {
-			return
-		}
-		for _, videoFile := range state.Videos {
-			var videoWfId VideoWfId
-			err = workflow.ExecuteActivity(
-				workflow.WithActivityOptions(ctx, actDiscBootstrapVideoOptions),
-				actDiscBootstrapVideo, discWfId, videoFile).Get(ctx, &videoWfId)
-			if err != nil {
-				return err
-			}
-			state.Videos = append(state.Videos, videoWfId)
-		}
-		return
+		err := discWfNew(ctx, discWfId, state)
+		wt.WorkIfNoError(err)
+		return err
+
 	}
 
 	err := workflow.SetUpdateHandler(ctx, DiscWFUpdateNameBootstrap, bootstrap)
