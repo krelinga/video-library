@@ -52,7 +52,7 @@ func (s *volumeTestSuite) TestDiscoverNewDiscs() {
 func TestVolumeWf(t *testing.T) {
 	suite.Run(t, new(volumeTestSuite))
 }
-func TestNewVolumeWfId(t *testing.T) {
+func TestVolumeWfId(t *testing.T) {
 	tests := []struct {
 		name      string
 		input     string
@@ -69,6 +69,7 @@ func TestNewVolumeWfId(t *testing.T) {
 			id, err := NewVolumeWfId(tt.input)
 			if tt.expectErr {
 				assert.ErrorIs(t, err, ErrInvalidWorkflowId)
+				assert.Panics(t, func() { id.Name() })
 			} else {
 				assert.NoError(t, err)
 				assert.Equal(t, VolumeWfId(tt.input), id)
