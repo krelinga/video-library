@@ -74,7 +74,7 @@ func actDiscNewVideo(ctx context.Context, discWfId DiscWfId, videoFilename strin
 	return videoWfId, nil
 }
 
-var actDiscBootstrapVideoOptions = lightOptions
+var actDiscNewVideoOptions = lightOptions
 
 func discWfNew(ctx workflow.Context, discWfId DiscWfId, state *DiscWFState) error {
 	var videoFiles []string
@@ -87,7 +87,7 @@ func discWfNew(ctx workflow.Context, discWfId DiscWfId, state *DiscWFState) erro
 	for _, videoFile := range state.Videos {
 		var videoWfId VideoWfId
 		err = workflow.ExecuteActivity(
-			workflow.WithActivityOptions(ctx, actDiscBootstrapVideoOptions),
+			workflow.WithActivityOptions(ctx, actDiscNewVideoOptions),
 			actDiscNewVideo, discWfId, videoFile).Get(ctx, &videoWfId)
 		if err != nil {
 			return err
