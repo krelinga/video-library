@@ -11,7 +11,6 @@ import (
 
 func TestDiscPath(t *testing.T) {
 	ctx := vlcontext.WithConfig(context.Background(), &vlconfig.Root{Volume: &vlconfig.Volume{Directory: "/mocked/path"}})
-	gotPath, err := DiscPath(ctx, DiscWfId("volume1/disc1"))
-	assert.NoError(t, err)
+	gotPath := DiscPath(ctx, DiscWfId("volume1/disc1"))
 	assert.Equal(t, "/mocked/path/volume1/disc1", gotPath)
 }

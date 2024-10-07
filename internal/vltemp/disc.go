@@ -21,16 +21,13 @@ type DiscWFState struct {
 	Videos []VideoWfId `json:"videos"`
 }
 
-func DiscPath(ctx context.Context, discWfId DiscWfId) (string, error) {
+func DiscPath(ctx context.Context, discWfId DiscWfId) string {
 	volumePath := VolumePath(ctx, discWfId.VolumeWfId())
-	return filepath.Join(volumePath, discWfId.Name()), nil
+	return filepath.Join(volumePath, discWfId.Name())
 }
 
 func DiscReadVideoNames(ctx context.Context, discWfId DiscWfId) ([]string, error) {
-	dir, err := DiscPath(ctx, discWfId)
-	if err != nil {
-		return nil, err
-	}
+	dir := DiscPath(ctx, discWfId)
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, err

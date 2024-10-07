@@ -13,10 +13,7 @@ const (
 
 func VideoPath(ctx context.Context, videoWfId VideoWfId) (string, error) {
 	if discWfId, discFilepath, ok := videoWfId.FromDisc(); ok {
-		discPath, err := DiscPath(ctx, discWfId)
-		if err != nil {
-			return "", err
-		}
+		discPath := DiscPath(ctx, discWfId)
 		return filepath.Join(discPath, discFilepath), nil
 	} else if filepath, ok := videoWfId.FromFilepath(); ok {
 		return filepath, nil
