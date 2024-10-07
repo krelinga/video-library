@@ -2,7 +2,7 @@ package vltemp
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"path/filepath"
 	"strings"
 )
@@ -11,50 +11,17 @@ const (
 	VideoUpdateBootstrap = "video-update-bootstrap"
 )
 
-type VideoLineage struct {
-	FromDisc *VideoFromDisc `json:"from_disc"`
-	// TODO: eventually support other options here.
-}
-
-type VideoFromDisc struct {
-	DiscID   string `json:"disc_id"`
-	Filename string `json:"filename"`
-}
-
-type VideoUpdateBootstrapRequest struct {
-	Lineage *VideoLineage `json:"lineage"`
-}
-
-var ErrCorruptVideoLineage = errors.New("corrupt video lineage")
-
-func VideoPath(ctx context.Context, videoLineage *VideoLineage) (string, error) {
-	switch {
-	case videoLineage.FromDisc != nil:
-		discPath, err := DiscPath(ctx, videoLineage.FromDisc.DiscID)
+func VideoPath(ctx context.Context, videoWfId VideoWfId) (string, error) {
+	if discWfId, discFilepath, ok := videoWfId.FromDisc(); ok {
+		discPath, err := DiscPath(ctx, discWfId)
 		if err != nil {
-			return "", errors.Join(ErrCorruptVideoLineage, err)
+			return "", err
 		}
-		if videoLineage.FromDisc.Filename == "" {
-			return "", errors.Join(ErrCorruptVideoLineage, errors.New("missing filename"))
-		}
-		return filepath.Join(discPath, videoLineage.FromDisc.Filename), nil
-	default:
-		return "", errors.Join(ErrCorruptVideoLineage, errors.New("unknown lineage"))
-	}
-}
-
-func LegacyVideoID(videoLineage *VideoLineage) (string, error) {
-	switch {
-	case videoLineage.FromDisc != nil:
-		if videoLineage.FromDisc.DiscID == "" {
-			return "", errors.Join(ErrCorruptVideoLineage, errors.New("missing DiscID"))
-		}
-		if videoLineage.FromDisc.Filename == "" {
-			return "", errors.Join(ErrCorruptVideoLineage, errors.New("missing filename"))
-		}
-		return filepath.Join(videoLineage.FromDisc.DiscID, videoLineage.FromDisc.Filename), nil
-	default:
-		return "", errors.Join(ErrCorruptVideoLineage, errors.New("unknown lineage"))
+		return filepath.Join(discPath, discFilepath), nil
+	} else if filepath, ok := videoWfId.FromFilepath(); ok {
+		return filepath, nil
+	} else {
+		panic("unexpected protocol " + videoWfId.Protocol())
 	}
 }
 
@@ -63,9 +30,12 @@ type VideoWfId string
 type parsedVideoWfId struct {
 	protocol string
 
-	// Only one of these will be set depending on protocol.
-	discWfId DiscWfId
-	// other types here in the future
+	// These fields will be set if protocol is "disc".
+	discWfId     DiscWfId
+	discFilename string
+
+	// These fields will be set if protocol is "filepath".
+	filepath string
 }
 
 func (id VideoWfId) parse() (p parsedVideoWfId, err error) {
@@ -79,8 +49,26 @@ func (id VideoWfId) parse() (p parsedVideoWfId, err error) {
 	other := parts[1]
 	switch p.protocol {
 	case "disc":
-		p.discWfId = DiscWfId(other)
+		parts := strings.Split(other, "/")
+		if len(parts) < 3 {
+			err = ErrInvalidWorkflowId
+			return
+		}
+		p.discWfId = DiscWfId(fmt.Sprintf("%s/%s", parts[0], parts[1]))
 		err = p.discWfId.Validate()
+		if err != nil {
+			return
+		}
+		p.discFilename = strings.Join(parts[2:], "/")
+		if !pathIsValid(p.discFilename) {
+			err = ErrInvalidWorkflowId
+			return
+		}
+	case "filepath":
+		p.filepath = other
+		if !rootPathIsValid(p.filepath) {
+			err = ErrInvalidWorkflowId
+		}
 	default:
 		err = ErrInvalidWorkflowId
 	}
@@ -100,15 +88,41 @@ func (id VideoWfId) Protocol() string {
 	return parsed.protocol
 }
 
-func (id VideoWfId) DiscWfId() (discWfId DiscWfId, ok bool) {
+func (id VideoWfId) FromDisc() (discWfId DiscWfId, videoFilename string, ok bool) {
 	parsed, err := id.parse()
-	if err != nil{
+	if err != nil {
 		panic(err)
 	}
 	if parsed.protocol != "disc" {
 		return
 	}
 	discWfId = parsed.discWfId
+	videoFilename = parsed.discFilename
 	ok = true
 	return
+}
+
+func (id VideoWfId) FromFilepath() (filepath string, ok bool) {
+	parsed, err := id.parse()
+	if err != nil {
+		panic(err)
+	}
+	if parsed.protocol != "filepath" {
+		return
+	}
+	filepath = parsed.filepath
+	ok = true
+	return
+}
+
+// Create a new VideoWfId for videos contained within a given disc.
+func NewVideoWfIdFromDisc(discWfId DiscWfId, videoFileName string) (VideoWfId, error) {
+	id := VideoWfId(fmt.Sprintf("disc:%s/%s", discWfId, videoFileName))
+	return id, id.Validate()
+}
+
+// Create a new VideoWfId for videos represented in the system by a raw file path.
+func NewVideoWfIdFromFilepath(filepath string) (VideoWfId, error) {
+	id := VideoWfId(fmt.Sprintf("filepath:%s", filepath))
+	return id, id.Validate()
 }

@@ -2,7 +2,6 @@ package vltemp
 
 import (
 	"context"
-	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -14,33 +13,21 @@ import (
 )
 
 type VolumeWFState struct {
-	Discs []string `json:"discs"`
+	Discs []DiscWfId `json:"discs"`
 }
 
 type VolumeWFUpdateDiscoverNewDiscsResponse struct {
 	// The workflow IDs of any newly-discovered Discs.
-	Discovered []string `json:"discovered"`
+	Discovered []DiscWfId `json:"discovered"`
 }
 
-var ErrInvalidVolumeID = errors.New("invalid volume ID")
-
-func ValidateVolumeID(volumeID string) error {
-	if volumeID == "" {
-		return ErrInvalidVolumeID
-	}
-	return nil
-}
-
-func VolumePath(ctx context.Context, volumeID string) (string, error) {
+func VolumePath(ctx context.Context, volumeWfId VolumeWfId) (string, error) {
 	cfg := vlcontext.GetConfig(ctx)
-	if err := ValidateVolumeID(volumeID); err != nil {
-		return "", err
-	}
-	return filepath.Join(cfg.Volume.Directory, volumeID), nil
+	return filepath.Join(cfg.Volume.Directory, volumeWfId.Name()), nil
 }
 
-func VolumeMkDir(ctx context.Context, volumeID string) error {
-	dir, err := VolumePath(ctx, volumeID)
+func VolumeMkDir(ctx context.Context, volumeWfId VolumeWfId) error {
+	dir, err := VolumePath(ctx, volumeWfId)
 	if err != nil {
 		return err
 	}
@@ -49,8 +36,8 @@ func VolumeMkDir(ctx context.Context, volumeID string) error {
 
 var VolumeMkDirOptions = lightOptions
 
-func VolumeReadDiscNames(ctx context.Context, volumeID string) ([]string, error) {
-	dir, err := VolumePath(ctx, volumeID)
+func VolumeReadDiscNames(ctx context.Context, volumeWfId VolumeWfId) ([]string, error) {
+	dir, err := VolumePath(ctx, volumeWfId)
 	if err != nil {
 		return nil, err
 	}
@@ -73,15 +60,15 @@ func VolumeReadDiscNames(ctx context.Context, volumeID string) ([]string, error)
 
 var VolumeReadDiscNamesOptions = lightOptions
 
-func VolumeBootstrapDisc(ctx context.Context, volumeID, discBase string) (string, error) {
+func VolumeBootstrapDisc(ctx context.Context, volumeWfId VolumeWfId, discFilename string) (DiscWfId, error) {
 	temporalClient := vlcontext.GetTemporalClient(ctx)
-	discID, err := DiscID(volumeID, discBase)
+	discWfId, err := NewDiscWfId(volumeWfId, discFilename)
 	if err != nil {
 		return "", err
 	}
 
 	opts := client.StartWorkflowOptions{
-		ID: discID,
+		ID: string(discWfId),
 	}
 	wf, err := temporalClient.ExecuteWorkflow(ctx, opts, DiscWF, nil)
 	if err != nil {
@@ -90,7 +77,7 @@ func VolumeBootstrapDisc(ctx context.Context, volumeID, discBase string) (string
 	updateHandle, err := temporalClient.UpdateWorkflow(ctx, client.UpdateWorkflowOptions{
 		UpdateID:            uuid.New().String(),
 		UpdateName:          DiscWFUpdateNameBootstrap,
-		WorkflowID:          discID,
+		WorkflowID:          string(discWfId),
 		WaitForStage:        client.WorkflowUpdateStageCompleted,
 		FirstExecutionRunID: wf.GetRunID(),
 	})
@@ -101,7 +88,7 @@ func VolumeBootstrapDisc(ctx context.Context, volumeID, discBase string) (string
 		return "", err
 	}
 
-	return discID, nil
+	return discWfId, nil
 }
 
 var VolumeBootstrapDiscOptions = lightOptions
@@ -109,7 +96,10 @@ var VolumeBootstrapDiscOptions = lightOptions
 const VolumeWFUpdateNameDiscoverNewDiscs = "VolumeWFUpdateDiscoverNewDiscs"
 
 func VolumeWF(ctx workflow.Context, state *VolumeWFState) error {
-	volumeID := workflow.GetInfo(ctx).WorkflowExecution.ID
+	volumeWfId := VolumeWfId(workflow.GetInfo(ctx).WorkflowExecution.ID)
+	if err := volumeWfId.Validate(); err != nil {
+		return err
+	}
 
 	wt := workTracker{}
 	if state == nil {
@@ -118,7 +108,7 @@ func VolumeWF(ctx workflow.Context, state *VolumeWFState) error {
 		state = &VolumeWFState{}
 		err := workflow.ExecuteActivity(
 			workflow.WithActivityOptions(ctx, VolumeMkDirOptions),
-			VolumeMkDir, volumeID).Get(ctx, nil)
+			VolumeMkDir, volumeWfId).Get(ctx, nil)
 		if err != nil {
 			return err
 		}
@@ -130,27 +120,31 @@ func VolumeWF(ctx workflow.Context, state *VolumeWFState) error {
 		var discDirs []string
 		err = workflow.ExecuteActivity(
 			workflow.WithActivityOptions(ctx, VolumeReadDiscNamesOptions),
-			VolumeReadDiscNames, volumeID).Get(ctx, &discDirs)
+			VolumeReadDiscNames, volumeWfId).Get(ctx, &discDirs)
 		if err != nil {
 			return
 		}
-		oldDiscs := map[string]struct{}{}
+		oldDiscs := map[DiscWfId]struct{}{}
 		for _, disc := range state.Discs {
 			oldDiscs[disc] = struct{}{}
 		}
 		for _, discDir := range discDirs {
-			disc := filepath.Join(volumeID, discDir)
-			if _, ok := oldDiscs[disc]; ok {
+			var discWfId DiscWfId
+			discWfId, err = NewDiscWfId(volumeWfId, discDir)
+			if err != nil {
+				return
+			}
+			if _, ok := oldDiscs[discWfId]; ok {
 				continue
 			}
 			if response == nil {
 				response = &VolumeWFUpdateDiscoverNewDiscsResponse{}
 			}
-			response.Discovered = append(response.Discovered, disc)
-			state.Discs = append(state.Discs, disc)
+			response.Discovered = append(response.Discovered, discWfId)
+			state.Discs = append(state.Discs, discWfId)
 			err = workflow.ExecuteActivity(
 				workflow.WithActivityOptions(ctx, VolumeBootstrapDiscOptions),
-				VolumeBootstrapDisc, volumeID, discDir).Get(ctx, nil)
+				VolumeBootstrapDisc, volumeWfId, discDir).Get(ctx, nil)
 			if err != nil {
 				return
 			}

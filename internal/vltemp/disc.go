@@ -2,6 +2,7 @@ package vltemp
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -28,8 +29,8 @@ func DiscPath(ctx context.Context, discWfId DiscWfId) (string, error) {
 	return filepath.Join(volumePath, discWfId.Name()), nil
 }
 
-func DiscReadVideoNames(ctx context.Context, discID string) ([]string, error) {
-	dir, err := DiscPath(ctx, discID)
+func DiscReadVideoNames(ctx context.Context, discWfId DiscWfId) ([]string, error) {
+	dir, err := DiscPath(ctx, discWfId)
 	if err != nil {
 		return nil, err
 	}
@@ -49,24 +50,15 @@ func DiscReadVideoNames(ctx context.Context, discID string) ([]string, error) {
 
 var DiscReadVideoNamesOptions = lightOptions
 
-func DiscBootstrapVideo(ctx context.Context, discID, videoFilename string) (string, error) {
+func DiscBootstrapVideo(ctx context.Context, discWfId DiscWfId, videoFilename string) (VideoWfId, error) {
 	temporalClient := vlcontext.GetTemporalClient(ctx)
-	lineage := &VideoLineage{
-		FromDisc: &VideoFromDisc{
-			DiscID:   discID,
-			Filename: videoFilename,
-		},
-	}
-	videoID, err := LegacyVideoID(lineage)
+	videoWfId, err := NewVideoWfIdFromDisc(discWfId, videoFilename)
 	if err != nil {
 		return "", err
 	}
 
-	request := &VideoUpdateBootstrapRequest{
-		Lineage: lineage,
-	}
 	opts := client.StartWorkflowOptions{
-		ID: videoID,
+		ID: string(videoWfId),
 	}
 	wf, err := temporalClient.ExecuteWorkflow(ctx, opts, DiscWF, nil)
 	if err != nil {
@@ -75,10 +67,9 @@ func DiscBootstrapVideo(ctx context.Context, discID, videoFilename string) (stri
 	updateHandle, err := temporalClient.UpdateWorkflow(ctx, client.UpdateWorkflowOptions{
 		UpdateID:            uuid.New().String(),
 		UpdateName:          VideoUpdateBootstrap,
-		WorkflowID:          videoID,
+		WorkflowID:          string(videoWfId),
 		WaitForStage:        client.WorkflowUpdateStageCompleted,
 		FirstExecutionRunID: wf.GetRunID(),
-		Args:                []interface{}{request},
 	})
 	if err != nil {
 		return "", err
@@ -86,7 +77,7 @@ func DiscBootstrapVideo(ctx context.Context, discID, videoFilename string) (stri
 	if err := updateHandle.Get(ctx, nil); err != nil {
 		return "", err
 	}
-	return videoID, nil
+	return videoWfId, nil
 }
 
 var DiscBootstrapVideoOptions = lightOptions
@@ -107,14 +98,14 @@ func DiscWF(ctx workflow.Context, state *DiscWFState) error {
 			return
 		}
 		for _, videoFile := range state.Videos {
-			var videoId string
+			var videoWfId VideoWfId
 			err = workflow.ExecuteActivity(
 				workflow.WithActivityOptions(ctx, DiscBootstrapVideoOptions),
-				DiscBootstrapVideo, discId, videoFile).Get(ctx, &videoId)
+				DiscBootstrapVideo, discId, videoFile).Get(ctx, &videoWfId)
 			if err != nil {
 				return err
 			}
-			state.Videos = append(state.Videos, videoId)
+			state.Videos = append(state.Videos, videoWfId)
 		}
 		return
 	}
@@ -176,4 +167,9 @@ func (id DiscWfId) Name() string {
 		panic(err)
 	}
 	return ame
+}
+
+func NewDiscWfId(volumeWfId VolumeWfId, discFilename string) (DiscWfId, error) {
+	id := DiscWfId(fmt.Sprintf("%s/%s", volumeWfId, discFilename))
+	return id, id.Validate()
 }
