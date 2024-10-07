@@ -119,3 +119,85 @@ func TestDiscPathWithMockedDiscParseID(t *testing.T) {
 		})
 	}
 }
+func TestNewDiscWFID(t *testing.T) {
+	tests := []struct {
+		name        string
+		volumeWFID  VolumeWFID
+		discDirName string
+		wantErr     error
+		wantValid   bool
+	}{
+		{
+			name:        "valid discWFID",
+			volumeWFID:  VolumeWFID("volume1"),
+			discDirName: "disc1",
+			wantErr:     nil,
+		},
+		{
+			name:        "invalid discWFID with empty discDirName",
+			volumeWFID:  VolumeWFID("volume2"),
+			discDirName: "",
+			wantErr:     ErrInvalidDiscDirName,
+		},
+		{
+			name:        "invalid discWFID with slash in discDirName",
+			volumeWFID:  VolumeWFID("volume3"),
+			discDirName: "disc/3",
+			wantErr:     ErrInvalidDiscDirName,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := NewDiscWFID(tt.volumeWFID, tt.discDirName)
+			if tt.wantErr != nil {
+				assert.ErrorIs(t, err, tt.wantErr)
+			} else {
+				assert.NoError(t, err)
+				assert.True(t, got.valid)
+				assert.Equal(t, tt.volumeWFID, got.VolumeWFID())
+				assert.Equal(t, tt.discDirName, got.DiscDirName())
+			}
+		})
+	}
+}
+
+func TestNewDiscWFIDFromString(t *testing.T) {
+	tests := []struct {
+		name      string
+		asString  string
+		wantErr   error
+		wantValid bool
+	}{
+		{
+			name:      "valid discWFID string",
+			asString:  "volume1/disc1",
+			wantErr:   nil,
+			wantValid: true,
+		},
+		{
+			name:      "invalid discWFID string with missing slash",
+			asString:  "volume2disc2",
+			wantErr:   ErrInvalidDiscWFIDString,
+			wantValid: false,
+		},
+		{
+			name:      "invalid discWFID string with empty parts",
+			asString:  "volume3/",
+			wantErr:   ErrInvalidDiscDirName,
+			wantValid: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := NewDiscWFIDFromString(tt.asString)
+			if tt.wantErr != nil {
+				assert.ErrorIs(t, err, tt.wantErr)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.wantValid, got.valid)
+			}
+		})
+	}
+}
