@@ -26,7 +26,7 @@ func DiscPath(ctx context.Context, discWfId DiscWfId) string {
 	return filepath.Join(volumePath, discWfId.Name())
 }
 
-func DiscReadVideoNames(ctx context.Context, discWfId DiscWfId) ([]string, error) {
+func actDiscReadVideoNames(ctx context.Context, discWfId DiscWfId) ([]string, error) {
 	dir := DiscPath(ctx, discWfId)
 	entries, err := os.ReadDir(dir)
 	if err != nil {
@@ -42,9 +42,9 @@ func DiscReadVideoNames(ctx context.Context, discWfId DiscWfId) ([]string, error
 	return videos, nil
 }
 
-var DiscReadVideoNamesOptions = lightOptions
+var actDiscReadVideoNamesOptions = lightOptions
 
-func DiscBootstrapVideo(ctx context.Context, discWfId DiscWfId, videoFilename string) (VideoWfId, error) {
+func actDiscBootstrapVideo(ctx context.Context, discWfId DiscWfId, videoFilename string) (VideoWfId, error) {
 	temporalClient := vlcontext.GetTemporalClient(ctx)
 	videoWfId, err := NewVideoWfIdFromDisc(discWfId, videoFilename)
 	if err != nil {
@@ -74,7 +74,7 @@ func DiscBootstrapVideo(ctx context.Context, discWfId DiscWfId, videoFilename st
 	return videoWfId, nil
 }
 
-var DiscBootstrapVideoOptions = lightOptions
+var actDiscBootstrapVideoOptions = lightOptions
 
 func DiscWF(ctx workflow.Context, state *DiscWFState) error {
 	discId := workflow.GetInfo(ctx).WorkflowExecution.ID
@@ -86,16 +86,16 @@ func DiscWF(ctx workflow.Context, state *DiscWFState) error {
 		state = &DiscWFState{}
 		var videoFiles []string
 		err = workflow.ExecuteActivity(
-			workflow.WithActivityOptions(ctx, DiscReadVideoNamesOptions),
-			DiscReadVideoNames, discId).Get(ctx, &videoFiles)
+			workflow.WithActivityOptions(ctx, actDiscReadVideoNamesOptions),
+			actDiscReadVideoNames, discId).Get(ctx, &videoFiles)
 		if err != nil {
 			return
 		}
 		for _, videoFile := range state.Videos {
 			var videoWfId VideoWfId
 			err = workflow.ExecuteActivity(
-				workflow.WithActivityOptions(ctx, DiscBootstrapVideoOptions),
-				DiscBootstrapVideo, discId, videoFile).Get(ctx, &videoWfId)
+				workflow.WithActivityOptions(ctx, actDiscBootstrapVideoOptions),
+				actDiscBootstrapVideo, discId, videoFile).Get(ctx, &videoWfId)
 			if err != nil {
 				return err
 			}

@@ -15,7 +15,7 @@ type volumeTestSuite struct {
 }
 
 func (s *volumeTestSuite) TestFreshlyCreated() {
-	s.env.OnActivity(VolumeMkDir, mock.Anything, VolumeWfId("test_volume")).Return(nil)
+	s.env.OnActivity(actVolumeMkDir, mock.Anything, VolumeWfId("test_volume")).Return(nil)
 	s.env.SetStartWorkflowOptions(client.StartWorkflowOptions{
 		ID: "test_volume",
 	})
@@ -26,8 +26,8 @@ func (s *volumeTestSuite) TestFreshlyCreated() {
 }
 
 func (s *volumeTestSuite) TestDiscoverNewDiscs() {
-	s.env.OnActivity(VolumeReadDiscNames, mock.Anything, VolumeWfId("test_volume")).Return([]string{"disc1", "disc2"}, nil)
-	s.env.OnActivity(VolumeBootstrapDisc, mock.Anything, VolumeWfId("test_volume"), "disc2").Return(DiscWfId("test_volume/disc2"), nil)
+	s.env.OnActivity(actVolumeReadDiscNames, mock.Anything, VolumeWfId("test_volume")).Return([]string{"disc1", "disc2"}, nil)
+	s.env.OnActivity(actVolumeBootstrapDisc, mock.Anything, VolumeWfId("test_volume"), "disc2").Return(DiscWfId("test_volume/disc2"), nil)
 	s.env.SetStartWorkflowOptions(client.StartWorkflowOptions{
 		ID: "test_volume",
 	})
