@@ -21,26 +21,20 @@ type VolumeWFUpdateDiscoverNewDiscsResponse struct {
 	Discovered []DiscWfId `json:"discovered"`
 }
 
-func VolumePath(ctx context.Context, volumeWfId VolumeWfId) (string, error) {
+func VolumePath(ctx context.Context, volumeWfId VolumeWfId) string {
 	cfg := vlcontext.GetConfig(ctx)
-	return filepath.Join(cfg.Volume.Directory, volumeWfId.Name()), nil
+	return filepath.Join(cfg.Volume.Directory, volumeWfId.Name())
 }
 
 func VolumeMkDir(ctx context.Context, volumeWfId VolumeWfId) error {
-	dir, err := VolumePath(ctx, volumeWfId)
-	if err != nil {
-		return err
-	}
+	dir := VolumePath(ctx, volumeWfId)
 	return os.MkdirAll(dir, 0755)
 }
 
 var VolumeMkDirOptions = lightOptions
 
 func VolumeReadDiscNames(ctx context.Context, volumeWfId VolumeWfId) ([]string, error) {
-	dir, err := VolumePath(ctx, volumeWfId)
-	if err != nil {
-		return nil, err
-	}
+	dir := VolumePath(ctx, volumeWfId)
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, err

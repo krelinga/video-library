@@ -22,10 +22,7 @@ type DiscWFState struct {
 }
 
 func DiscPath(ctx context.Context, discWfId DiscWfId) (string, error) {
-	volumePath, err := VolumePath(ctx, discWfId.VolumeWfId())
-	if err != nil {
-		return "", err
-	}
+	volumePath := VolumePath(ctx, discWfId.VolumeWfId())
 	return filepath.Join(volumePath, discWfId.Name()), nil
 }
 
