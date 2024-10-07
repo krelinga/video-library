@@ -8,6 +8,8 @@ import (
 
 type VolumeWfId interface {
 	Name() string
+
+	String() string
 }
 
 type volumeWfIdImpl struct {
