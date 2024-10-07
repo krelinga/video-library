@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"go.temporal.io/sdk/client"
@@ -50,4 +51,28 @@ func (s *volumeTestSuite) TestDiscoverNewDiscs() {
 
 func TestVolumeWf(t *testing.T) {
 	suite.Run(t, new(volumeTestSuite))
+}
+func TestNewVolumeWfId(t *testing.T) {
+	tests := []struct {
+		name      string
+		input     string
+		expectErr bool
+	}{
+		{"Valid ID", "valid-volume-id", false},
+		{"Invalid ID with slashes", "invalid/volume/id", true},
+		{"Invalid ID with colons", "invalid:volume:id", true},
+		{"Empty ID", "", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			id, err := NewVolumeWfId(tt.input)
+			if tt.expectErr {
+				assert.ErrorIs(t, err, ErrInvalidWorkflowId)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, VolumeWfId(tt.input), id)
+			}
+		})
+	}
 }
